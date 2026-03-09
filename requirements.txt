@@ -1,0 +1,5 @@
+# python==3.9
+tensorflow==2.15.0
+opencv-python 
+pandas 
+imutils
