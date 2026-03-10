@@ -3,3 +3,6 @@ tensorflow==2.15.0
 opencv-python 
 pandas 
 imutils
+scikit-learn
+wandb
+matplotlib
