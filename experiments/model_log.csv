@@ -7,3 +7,4 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
         Resized width to 80, cropped top 1/4.
         Sigmoid outputs for normalized targets.
     "
+2026-03-10 19:57:21,02_wider_mlp_with_dropout,rf66lj6h,24,0.04767,Frozen base. Wider MLP head (256 -> 128) with 30% Dropout to prevent overfitting.

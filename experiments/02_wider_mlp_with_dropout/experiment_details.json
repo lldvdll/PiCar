@@ -1,0 +1,31 @@
+{
+    "EXPERIMENT_NAME": "02_wider_mlp_with_dropout",
+    "DESCRIPTION": "Frozen base. Wider MLP head (256 -> 128) with 30% Dropout to prevent overfitting.",
+    "OVERWRITE_EXPERIMENT": true,
+    "TRAIN_CSV": "data\\train.csv",
+    "TRAIN_IMG_DIR": "data\\training_data\\training_data",
+    "TEST_IMG_DIR": "data\\test_data\\test_data",
+    "SUBMISSION_TEMPLATE": "data\\sample_submission.csv",
+    "IMG_WIDTH_TARGET": 80,
+    "IMG_HEIGHT_TARGET": 60,
+    "CROP_TOP_PIXELS": 15,
+    "CHANNELS": 3,
+    "EPOCHS": 25,
+    "BATCH_SIZE": 32,
+    "LEARNING_RATE": 0.001,
+    "OPTIMIZER": "adam",
+    "LOSS_FUNCTION": "mse",
+    "BASE_MODEL": "MobileNetV2",
+    "BASE_WEIGHTS": "imagenet",
+    "UNFREEZE_TOP_N_LAYERS": 0,
+    "DENSE_UNITS_1": 256,
+    "DENSE_UNITS_2": 128,
+    "DROPOUT_RATE": 0.3,
+    "ACTIVATION_HIDDEN": "relu",
+    "ACTIVATION_OUTPUT": "sigmoid",
+    "INPUT_SHAPE": [
+        45,
+        80,
+        3
+    ]
+}
