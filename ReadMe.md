@@ -16,3 +16,8 @@ pip install -r requirements.txt
 
 # Weights and Biases
 
+
+# Data preparation
+prepare_dataset.py - runs label bias analysis and creates a new train file with weightings for even sampling over speed/angle joint distribution
+
+

@@ -6,3 +6,4 @@ imutils
 scikit-learn
 wandb
 matplotlib
+seaborn
