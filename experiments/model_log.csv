@@ -1,0 +1,9 @@
+Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
+2026-03-10 16:07:23,01_baseline_mobilenetv2,tihqx4x4,17,0.04954,"
+        Baseline run with W&B integration. 
+        Transfer learning with frozen MobileNetV2.
+        Global Average Pooling to extract features (64 features, relu activation).
+        Dense layers for regression (64 units, sigmoid activation).
+        Resized width to 80, cropped top 1/4.
+        Sigmoid outputs for normalized targets.
+    "
