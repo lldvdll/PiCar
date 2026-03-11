@@ -9,3 +9,4 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
     "
 2026-03-10 19:57:21,02_wider_mlp_with_dropout,rf66lj6h,24,0.04767,Frozen base. Wider MLP head (256 -> 128) with 30% Dropout to prevent overfitting.
 2026-03-10 22:29:29,03_finetune_top_20,jh5jqhw3,27,0.0321,Phase 1: Warmup simple head. Phase 2: Unfreeze top 20 layers with 10x lower LR.
+2026-03-11 02:53:16,04_unbiased_training_data,lhaj4bcz,35,0.01579,Removed bias from the training data by weighting images by their frequency in the speed/angle join distribution
