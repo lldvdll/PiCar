@@ -13,7 +13,9 @@ Done
 - Rerunning with 7 epochs for frozen and 25 epochs for unfrozen - not really much improvement
 - De-biased training data, created new label file with weightings based on speed/angle joint distribution
 - Re-running with 7 warm up epochs and 20 unfrozen epochs (20 layers) - improved performance and more epochs required (35)
-- Create visualisation app for pre-processing - crop can be more agressive 15 > 120 TOP, 0 > 30 BOTTOM, resize (320, 240) > (60, 120). Crop is extreme and removes roadsigns. Can always relax later.
+- Create visualisation app for pre-processing - Crop can be more agressive 15 > 120 TOP, 0 > 30 BOTTOM, resize (320, 240) > (96, 160) [Note: any size not in 96, 120, 160, 224 defaults to weight size 224]. Crop is extreme and removes roadsigns. Can always relax later.
+- run 35 epochs. imroved results, but only slightly
+- tested snapp
 
 
 
