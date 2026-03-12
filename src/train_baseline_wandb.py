@@ -22,8 +22,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "04_unbiased_training_data",
-    "DESCRIPTION": "Removed bias from the training data by weighting images by their frequency in the speed/angle join distribution",
+    "EXPERIMENT_NAME": "05_agressive_image_crop",
+    "DESCRIPTION": "More agressive crop: 15 > 120 TOP, 0 > 30 BOTTOM, resize (320, 240) > (96, 160). Crop is extreme and removes roadsigns.",
     "OVERWRITE_EXPERIMENT": True,
     
     # --- Data Paths ---
@@ -31,11 +31,13 @@ CONFIG = {
     "TRAIN_IMG_DIR": os.path.join("data", "training_data", "training_data"),
     "TEST_IMG_DIR": os.path.join("data", "test_data", "test_data"),
     "SUBMISSION_TEMPLATE": os.path.join("data", "sample_submission.csv"),
+    "BAD_IMG_CSV": os.path.join("data", "bad_images.csv"),
     
     # --- Image Preprocessing ---
-    "IMG_WIDTH_TARGET": 80,
-    "IMG_HEIGHT_TARGET": 60,
-    "CROP_TOP_PIXELS": 15, 
+    "IMG_WIDTH_TARGET": 160,
+    "IMG_HEIGHT_TARGET": 96,
+    "CROP_TOP_PIXELS": 120, 
+    "CROP_BOTTOM_PIXELS": 30, 
     "CHANNELS": 3,
     
     # --- Two-Phase Training Hyperparameters ---
@@ -62,7 +64,7 @@ CONFIG = {
 
 # Derived Input Shape based on config
 CONFIG["INPUT_SHAPE"] = (
-    CONFIG["IMG_HEIGHT_TARGET"] - CONFIG["CROP_TOP_PIXELS"], 
+    CONFIG["IMG_HEIGHT_TARGET"], 
     CONFIG["IMG_WIDTH_TARGET"], 
     CONFIG["CHANNELS"]
 )
@@ -132,18 +134,51 @@ def validate_image_paths(df, img_dir):
     return valid_paths, clean_df
 
 # --- 2. DATA PIPELINE ---
+
+def reshape_image(img):
+    """ Crop and resize image"""    
+    top = CONFIG.get("CROP_TOP_PIXELS", 0)
+    bottom_crop = CONFIG.get("CROP_BOTTOM_PIXELS", 0)
+    bottom = -bottom_crop if bottom_crop > 0 else None
+    img = img[top:bottom, :, :]
+    img = tf.image.resize(img, [CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"]])
+    return img
+
 def preprocess_image(image_path, angle=None, speed=None):
+    """
+        Normalise image between 0 and 1.
+        Crop top of image to remove background
+        Resize image
+        Return image and labels if training, image only if inference
+    """
     img = tf.io.read_file(image_path)
     img = tf.image.decode_png(img, channels=CONFIG["CHANNELS"])
     img = tf.cast(img, tf.float32) / 255.0
-    img = tf.image.resize(img, [CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"]])
-    img = img[CONFIG["CROP_TOP_PIXELS"]:, :, :]
+    img = reshape_image(img)
     if angle is not None and speed is not None:
         return img, {'angle_output': angle, 'speed_output': speed}
     return img
 
 def prepare_data_pipelines():
+    """
+        Prepare training and validation data pipelines
+        Load image file log
+        Ignore any flagged images from data/bad_images.csv
+        Sample from dataset using inverse weights - de-biasing data
+        Split into train/val
+        ...do tf stuf??
+        Set batch size
+        Return training and valudation sets
+    """
     df = pd.read_csv(CONFIG["TRAIN_CSV"])
+    
+    # Drop flagged images
+    bad_df = pd.read_csv(CONFIG["BAD_IMG_CSV"])
+    bad_list = bad_df['filename'].astype(str).tolist()
+    df['check_name'] = df['image_id'].astype(float).astype(int).astype(str) + '.png'
+    initial_count = len(df)
+    df = df[~df['check_name'].isin(bad_list)].drop(columns=['check_name'])
+    print(f"[INFO] Dropped {initial_count - len(df)} manually flagged bad images.")
     
     # NEW: The Magic Balancing Act
     # We mathematically sample exactly the length of the dataset, but using our inverse weights.
@@ -168,7 +203,12 @@ def prepare_data_pipelines():
 
 # --- 3. MODEL ARCHITECTURE ---
 def build_initial_model():
-    """Builds the model with a fully frozen base for the warm-up phase."""
+    """
+        Builds the neural network architecture
+            Load MobileNetV2 base model
+            Freeze weights (they will be unfrozen later after head warm up epochs)
+                        
+    """
     inputs = tf.keras.Input(shape=CONFIG["INPUT_SHAPE"])
     base_model = MobileNetV2(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
     

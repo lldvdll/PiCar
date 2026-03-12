@@ -12,18 +12,23 @@ Done
 - [REPORT] Unfroze 20 layers, with head warmup of 5 epochs. Interesting spike in loss when unfreezing, then not enough epochs for fine tuning to converge. Spike is "optimiser shock", effectively recompiling the model wipes momentums/history from Adam, so we take a suboptimal step
 - Rerunning with 7 epochs for frozen and 25 epochs for unfrozen - not really much improvement
 - De-biased training data, created new label file with weightings based on speed/angle joint distribution
-- Re-running with 7 warm up epochs and 20 unfrozen epochs (20 layers)
+- Re-running with 7 warm up epochs and 20 unfrozen epochs (20 layers) - improved performance and more epochs required (35)
+- Create visualisation app for pre-processing - crop can be more agressive 15 > 120 TOP, 0 > 30 BOTTOM, resize (320, 240) > (60, 120). Crop is extreme and removes roadsigns. Can always relax later.
 
 
 
 
 Next
+- Try mobilenetv3, smaller.
+- Add conv layer to head pre MLP ()
+- Add transformer layer to head pre MLP (preserve spatial context)
 - Switch to binary speed. Also create  submission only output which snaps predictions to bins
 - Note outputs are continuous - we map them to the discrete values expected for submission only
     - speed - 0,1
     - angle - 16? discrete bins?
 - Implement gradual unfreezing - with appropriate learning rates
-
+- clean up glare on road mat
+- remove as many dead or useless images as i find in pre-processing analysis
 - Analyse bias in training data. If significant, balance it in training
 - Extend head - make it both wider and deeper. Pay attention to epoch convergence
 - Review relevant model list for more efficient

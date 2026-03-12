@@ -24,3 +24,6 @@ prepare_dataset.py - runs label bias analysis and creates a new train file with 
 # MLiS server connect
 ssh [uni username]@mlis1@nottingham.ac.uk
 ssh [uni username]@mlis2@nottingham.ac.uk
+
+# Connecting from home
+https://windows.cloud.microsoft/#/devices - VM service for home access
