@@ -22,8 +22,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "05_agressive_image_crop",
-    "DESCRIPTION": "More agressive crop: 15 > 120 TOP, 0 > 30 BOTTOM, resize (320, 240) > (96, 160). Crop is extreme and removes roadsigns.",
+    "EXPERIMENT_NAME": "06_data_augmentation",
+    "DESCRIPTION": "Added data augmentation - colour, light, noise, vertical tilt, and rotation only.",
     "OVERWRITE_EXPERIMENT": True,
     
     # --- Data Paths ---
@@ -39,6 +39,18 @@ CONFIG = {
     "CROP_TOP_PIXELS": 120, 
     "CROP_BOTTOM_PIXELS": 30, 
     "CHANNELS": 3,
+    
+# --- Data Augmentation ---
+    "AUG_USE_AUGMENTATION": True,
+    "AUG_BRIGHTNESS_DELTA": 0.1,   
+    "AUG_CONTRAST_LOWER": 0.9,     
+    "AUG_CONTRAST_UPPER": 1.1,     
+    "AUG_SATURATION_LOWER": 0.9,
+    "AUG_SATURATION_UPPER": 1.1,
+    "AUG_HUE_DELTA": 0.05,         
+    "AUG_NOISE_STDDEV": 0.02,
+    "AUG_ROTATION_FACTOR": 0.01,
+    "AUG_TILT_FACTOR": 0.05,
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
@@ -144,19 +156,52 @@ def reshape_image(img):
     img = tf.image.resize(img, [CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"]])
     return img
 
-def preprocess_image(image_path, angle=None, speed=None):
+def augment_image(img):
+    """ Image Augmentation 
+        - colour and lighting: brightness, contrast, saturation, hue
+        - image quality: add gausian noise
+        - camera jitter: add small rotation
+    """
+    img = tf.image.random_brightness(img, max_delta=CONFIG["AUG_BRIGHTNESS_DELTA"])
+    img = tf.image.random_contrast(img, lower=CONFIG["AUG_CONTRAST_LOWER"], upper=CONFIG["AUG_CONTRAST_UPPER"])
+    img = tf.image.random_saturation(img, lower=CONFIG["AUG_SATURATION_LOWER"], upper=CONFIG["AUG_SATURATION_UPPER"])
+    img = tf.image.random_hue(img, max_delta=CONFIG["AUG_HUE_DELTA"])
+    
+    if CONFIG["AUG_NOISE_STDDEV"] > 0:
+        noise = tf.random.normal(shape=tf.shape(img), mean=0.0, stddev=CONFIG["AUG_NOISE_STDDEV"])
+        img = img + noise
+        
+    if CONFIG["AUG_ROTATION_FACTOR"] > 0:
+        img = tf.expand_dims(img, 0)
+        img = tf.keras.layers.RandomRotation(factor=CONFIG["AUG_ROTATION_FACTOR"], fill_mode='nearest')(img)
+        img = tf.squeeze(img, 0)
+        
+    if CONFIG.get("AUG_TILT_FACTOR", 0) > 0:
+        # height_factor shifts vertically, width_factor=0.0 prevents horizontal drift
+        img = tf.keras.layers.RandomTranslation(height_factor=CONFIG["AUG_TILT_FACTOR"], width_factor=0.0, fill_mode='nearest')(img)
+
+    return tf.clip_by_value(img, 0.0, 1.0)
+
+def preprocess_image(image_path, angle=None, speed=None, augment=False):
     """
         Normalise image between 0 and 1.
         Crop top of image to remove background
         Resize image
+        Augment (training only)
         Return image and labels if training, image only if inference
     """
     img = tf.io.read_file(image_path)
     img = tf.image.decode_png(img, channels=CONFIG["CHANNELS"])
     img = tf.cast(img, tf.float32) / 255.0
+    
+    if augment and CONFIG.get("AUG_USE_AUGMENTATION", False):
+        img = augment_image(img)
+    
     img = reshape_image(img)
+        
     if angle is not None and speed is not None:
         return img, {'angle_output': angle, 'speed_output': speed}
+    
     return img
 
 def prepare_data_pipelines():
@@ -189,17 +234,17 @@ def prepare_data_pipelines():
     # Split the fully balanced dataset
     train_df, val_df = train_test_split(balanced_df, test_size=0.2, random_state=42)
     
-    def create_ds(dataframe, shuffle):
+    def create_ds(dataframe, is_training):
         paths = dataframe['filepath'].values
         angles = dataframe['angle'].values.astype(np.float32)
         speeds = dataframe['speed'].values.astype(np.float32)
         ds = tf.data.Dataset.from_tensor_slices((paths, angles, speeds))
-        ds = ds.map(preprocess_image, num_parallel_calls=tf.data.AUTOTUNE)
-        if shuffle:
+        ds = ds.map(lambda p, a, s: preprocess_image(p, a, s, augment=is_training), num_parallel_calls=tf.data.AUTOTUNE)
+        if is_training:
             ds = ds.shuffle(buffer_size=len(dataframe))
         return ds.batch(CONFIG["BATCH_SIZE"]).prefetch(tf.data.AUTOTUNE)
-        
-    return create_ds(train_df, shuffle=True), create_ds(val_df, shuffle=False)
+    
+    return create_ds(train_df, is_training=True), create_ds(val_df, is_training=False)
 
 # --- 3. MODEL ARCHITECTURE ---
 def build_initial_model():

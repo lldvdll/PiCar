@@ -15,7 +15,8 @@ Done
 - Re-running with 7 warm up epochs and 20 unfrozen epochs (20 layers) - improved performance and more epochs required (35)
 - Create visualisation app for pre-processing - Crop can be more agressive 15 > 120 TOP, 0 > 30 BOTTOM, resize (320, 240) > (96, 160) [Note: any size not in 96, 120, 160, 224 defaults to weight size 224]. Crop is extreme and removes roadsigns. Can always relax later.
 - run 35 epochs. imroved results, but only slightly
-- tested snapp
+- tested snapping. made mse worse, mainly because speed snapping is dramatic (0,1). Will test each training run
+- implemented data augmentation - colour, light, noise, vertical tilt, and rotation only. Might add more later
 
 
 
