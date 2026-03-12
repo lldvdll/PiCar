@@ -156,6 +156,9 @@ def reshape_image(img):
     img = tf.image.resize(img, [CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"]])
     return img
 
+# Instantiate Keras layers globally so tf.data doesn't recreate them on every image
+random_rotation_layer = tf.keras.layers.RandomRotation(factor=CONFIG["AUG_ROTATION_FACTOR"], fill_mode='nearest')
+random_translation_layer = tf.keras.layers.RandomTranslation(height_factor=CONFIG["AUG_TILT_FACTOR"], width_factor=0.0, fill_mode='nearest')
 def augment_image(img):
     """ Image Augmentation 
         - colour and lighting: brightness, contrast, saturation, hue
@@ -171,14 +174,16 @@ def augment_image(img):
         noise = tf.random.normal(shape=tf.shape(img), mean=0.0, stddev=CONFIG["AUG_NOISE_STDDEV"])
         img = img + noise
         
+    # Apply spatial transforms using the globally instantiated layers
     if CONFIG["AUG_ROTATION_FACTOR"] > 0:
         img = tf.expand_dims(img, 0)
-        img = tf.keras.layers.RandomRotation(factor=CONFIG["AUG_ROTATION_FACTOR"], fill_mode='nearest')(img)
+        img = random_rotation_layer(img) # Call the global layer here
         img = tf.squeeze(img, 0)
         
     if CONFIG.get("AUG_TILT_FACTOR", 0) > 0:
-        # height_factor shifts vertically, width_factor=0.0 prevents horizontal drift
-        img = tf.keras.layers.RandomTranslation(height_factor=CONFIG["AUG_TILT_FACTOR"], width_factor=0.0, fill_mode='nearest')(img)
+        img = tf.expand_dims(img, 0) # Needs batch dimension again
+        img = random_translation_layer(img) # Call the global layer here
+        img = tf.squeeze(img, 0)
 
     return tf.clip_by_value(img, 0.0, 1.0)
 
