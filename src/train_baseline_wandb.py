@@ -22,8 +22,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "07_attention_block",
-    "DESCRIPTION": "Added attention block, also Conv bottleneck before, and 2 layer MLP after. Reduce tilt and rotation as they may confuse angles.",
+    "EXPERIMENT_NAME": "08_unfreeze_40",
+    "DESCRIPTION": "Unfreeze top 40 layers. Also relaxed the geometric data augmentation and the top crop, and removed some bad images.",
     "OVERWRITE_EXPERIMENT": True,
     
     # --- Data Paths ---
@@ -36,7 +36,7 @@ CONFIG = {
     # --- Image Preprocessing ---
     "IMG_WIDTH_TARGET": 160,
     "IMG_HEIGHT_TARGET": 96,
-    "CROP_TOP_PIXELS": 120, 
+    "CROP_TOP_PIXELS": 110, 
     "CROP_BOTTOM_PIXELS": 30, 
     "CHANNELS": 3,
     
@@ -48,9 +48,9 @@ CONFIG = {
     "AUG_SATURATION_LOWER": 0.9,
     "AUG_SATURATION_UPPER": 1.1,
     "AUG_HUE_DELTA": 0.05,         
-    "AUG_NOISE_STDDEV": 0.02,
-    "AUG_ROTATION_FACTOR": 0.05,
-    "AUG_TILT_FACTOR": 0.02,
+    "AUG_NOISE_STDDEV": 0.005,
+    "AUG_ROTATION_FACTOR": 0.005,
+    "AUG_TILT_FACTOR": 0.01,
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
@@ -64,7 +64,7 @@ CONFIG = {
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
-    "UNFREEZE_TOP_N_LAYERS": 20,    # Set to 0 to skip fine-tuning entirely
+    "UNFREEZE_TOP_N_LAYERS": 40,    # Set to 0 to skip fine-tuning entirely
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": True,

@@ -19,6 +19,8 @@ Done
 - [06] implemented data augmentation - colour, light, noise, vertical tilt, and rotation only. Might add more later
 - Higher MSE, likely due to too much rotation/tilt affecting road marking to angle mapping as angle loss is now higher.
 - [07] Added attention block, also Conv bottleneck before, and 2 layer MLP after. Reduce tilt and rotation as they may confuse angles
+- Rand for 35 epochs. It did worse again. Geometric data augmentation is to agressive and will affect angle prediction. Last MobileNetV2 layer is only 3x5, so maybe actually need to chop some layers off MobileNet for transformer to have space to work? Or just drop it
+- [08] Next - fix augmentation, unfreeze more layers (40), rerun 
 
 
 
