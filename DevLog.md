@@ -20,6 +20,7 @@ Done
 - Higher MSE, likely due to too much rotation/tilt affecting road marking to angle mapping as angle loss is now higher.
 - [07] Added attention block, also Conv bottleneck before, and 2 layer MLP after. Reduce tilt and rotation as they may confuse angles
 - Rand for 35 epochs. It did worse again. Geometric data augmentation is to agressive and will affect angle prediction. Last MobileNetV2 layer is only 3x5, so maybe actually need to chop some layers off MobileNet for transformer to have space to work? Or just drop it
+- Run feature analysis - Grad-CAM for speed and angle independent, and feature maps over layers. Notice network is still learning background cheats. Some clearly following road markings, though inconsistent flip-flip for speed and angle between images. Sometimes not caring enough about both lines.Some clear obstruction detection. Block 7 and beyond features look a bit useless. Cutout augmentation will help with overfitting to specific line arangements. Drop blocks 10>, they are a bit useless and give the attention block less space, but unfreeze 7-10 for learning specific features before attention. ROI pre-processing, e.g. polygon masking, to recover road signs and block out distracting background at image corners.
 - [08] Next - fix augmentation, unfreeze more layers (40), rerun 
 
 
@@ -27,6 +28,12 @@ Done
 
 
 Next
+- Run planned reduced augmentation (reduce rotation, tilt, and some more bad image removal, blind unfreeze 40 layers). Running now.
+- cut after block 7 - i think for this i would like to cut blocks 10-17, but freeze blocks 1-6, giving the model space to learn new features, but deleting the deeper stuff in place of the current transformer block. But please you'll need to help me identify the correct layers, or add a layer to block mapping to the code.
+- cutout augmentation. I like this idea and want to see how it performs, but don't want to do it while we still have a lot of redundancy
+- ROI masking - this would allow us to be less agressive in the centre,
+ recovering importand rad signage, while also cutting useless background from the outer edges.
+-Splitting the transformer layers - again, makes perfect sense to decouple the context analyser component for the different objectives. It also makes a bit of sense to combine them because they are not independant, but let's try this first.
 - Try mobilenetv3, smaller.
 - Add conv layer to head pre MLP ()
 - Add transformer layer to head pre MLP (preserve spatial context)
