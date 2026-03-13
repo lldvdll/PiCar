@@ -7,16 +7,19 @@ Done
     - 2 dense (1, sigmoid) - for speed and angle, normalised to 0-1
 - Set up Weights and Biases. Preferable solution for live logging and easy result sharing. Also far easier to set up than MLFlow
 - Note: Model converges after epoch 3. Most likely because we freeze the CNN layers, the MLP are small so converge fast
-- Run model and get baseline submission - plateus before epoch 5, the bottleneck is the frozen CNN layers
-- Make head wider and deeper - no improvement, the bottleneck is the frozen CNN layers
-- [REPORT] Unfroze 20 layers, with head warmup of 5 epochs. Interesting spike in loss when unfreezing, then not enough epochs for fine tuning to converge. Spike is "optimiser shock", effectively recompiling the model wipes momentums/history from Adam, so we take a suboptimal step
+- [01] Run model and get baseline submission - plateus before epoch 5, the bottleneck is the frozen CNN layers
+- [02] Make head wider and deeper - no improvement, the bottleneck is the frozen CNN layers
+- [03][REPORT] Unfroze 20 layers, with head warmup of 5 epochs. Interesting spike in loss when unfreezing, then not enough epochs for fine tuning to converge. Spike is "optimiser shock", effectively recompiling the model wipes momentums/history from Adam, so we take a suboptimal step
 - Rerunning with 7 epochs for frozen and 25 epochs for unfrozen - not really much improvement
 - De-biased training data, created new label file with weightings based on speed/angle joint distribution
-- Re-running with 7 warm up epochs and 20 unfrozen epochs (20 layers) - improved performance and more epochs required (35)
+- [04] Re-running with 7 warm up epochs and 20 unfrozen epochs (20 layers) - improved performance and more epochs required (35)
 - Create visualisation app for pre-processing - Crop can be more agressive 15 > 120 TOP, 0 > 30 BOTTOM, resize (320, 240) > (96, 160) [Note: any size not in 96, 120, 160, 224 defaults to weight size 224]. Crop is extreme and removes roadsigns. Can always relax later.
-- run 35 epochs. imroved results, but only slightly
+- [05] run 35 epochs. imroved results, but only slightly
 - tested snapping. made mse worse, mainly because speed snapping is dramatic (0,1). Will test each training run
-- implemented data augmentation - colour, light, noise, vertical tilt, and rotation only. Might add more later
+- [06] implemented data augmentation - colour, light, noise, vertical tilt, and rotation only. Might add more later
+- Higher MSE, likely due to too much rotation/tilt affecting road marking to angle mapping as angle loss is now higher.
+- [07] Added attention block, also Conv bottleneck before, and 2 layer MLP after. Reduce tilt and rotation as they may confuse angles
+
 
 
 
@@ -37,3 +40,4 @@ Next
 - Review relevant model list for more efficient
 - Prune redundant features?
 - Assess various pretrained models for task relevance, efficiency and performance
+- FINAL PASS: Train blind on ALL 14k images. Train with validation first to find epoch to stop at. Then train on ALL data, no validation. Apparently this always does better in kaggle because the model gets to see more data.

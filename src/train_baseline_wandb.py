@@ -22,8 +22,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "06_data_augmentation",
-    "DESCRIPTION": "Added data augmentation - colour, light, noise, vertical tilt, and rotation only.",
+    "EXPERIMENT_NAME": "07_attention_block",
+    "DESCRIPTION": "Added attention block, also Conv bottleneck before, and 2 layer MLP after. Reduce tilt and rotation as they may confuse angles.",
     "OVERWRITE_EXPERIMENT": True,
     
     # --- Data Paths ---
@@ -49,12 +49,12 @@ CONFIG = {
     "AUG_SATURATION_UPPER": 1.1,
     "AUG_HUE_DELTA": 0.05,         
     "AUG_NOISE_STDDEV": 0.02,
-    "AUG_ROTATION_FACTOR": 0.01,
-    "AUG_TILT_FACTOR": 0.05,
+    "AUG_ROTATION_FACTOR": 0.05,
+    "AUG_TILT_FACTOR": 0.02,
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_FINETUNE": 35,          # Train unfrozen base with low LR
+    "EPOCHS_FINETUNE":45,          # Train unfrozen base with low LR
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-4, 
     "BATCH_SIZE": 32,
@@ -66,9 +66,13 @@ CONFIG = {
     "BASE_WEIGHTS": "imagenet",
     "UNFREEZE_TOP_N_LAYERS": 20,    # Set to 0 to skip fine-tuning entirely
     
+    # --- Attention Head ---
+    "USE_ATTENTION_BLOCK": True,
+    "ATTN_BOTTLENECK_CHANNELS": 128, # Reduces 1280 channels down to this before attention
+    
     # --- Head Flexibility Toggle ---
-    "DENSE_UNITS_1": 64,       # 256
-    "DENSE_UNITS_2": None,       # 128
+    "DENSE_UNITS_1": 256,       # 256
+    "DENSE_UNITS_2": 128,       # 128
     "DROPOUT_RATE": 0.3,        
     "ACTIVATION_HIDDEN": "relu",
     "ACTIVATION_OUTPUT": "sigmoid"
@@ -177,12 +181,12 @@ def augment_image(img):
     # Apply spatial transforms using the globally instantiated layers
     if CONFIG["AUG_ROTATION_FACTOR"] > 0:
         img = tf.expand_dims(img, 0)
-        img = random_rotation_layer(img) # Call the global layer here
+        img = random_rotation_layer(img, training=True) # Call the global layer here
         img = tf.squeeze(img, 0)
         
     if CONFIG.get("AUG_TILT_FACTOR", 0) > 0:
         img = tf.expand_dims(img, 0) # Needs batch dimension again
-        img = random_translation_layer(img) # Call the global layer here
+        img = random_translation_layer(img, training=True) # Call the global layer here
         img = tf.squeeze(img, 0)
 
     return tf.clip_by_value(img, 0.0, 1.0)
@@ -264,9 +268,26 @@ def build_initial_model():
     
     # Phase 1: Base is completely frozen
     base_model.trainable = False 
-    
     features = base_model(inputs, training=False)
-    x = layers.GlobalAveragePooling2D()(features)
+    
+    # --- OPTIONAL ATTENTION BLOCK ---
+    if CONFIG.get("USE_ATTENTION_BLOCK", False):
+        print("[INFO] Building Spatial Attention Block...")
+        # 1. Bottleneck: Reduce channel depth to save compute (1280 -> 128)
+        reduced_features = layers.Conv2D(CONFIG["ATTN_BOTTLENECK_CHANNELS"], kernel_size=1, activation="relu")(features)
+        
+        # 2. Attention Map: Create a 1-channel spatial heatmap (values 0.0 to 1.0)
+        attention_map = layers.Conv2D(1, kernel_size=1, activation="sigmoid")(reduced_features)
+        
+        # 3. Apply Attention: Multiply the ORIGINAL features (1280) by the heatmap (1)
+        weighted_features = layers.Multiply()([features, attention_map])
+        
+        # Pass the weighted features into the GAP layer instead of the raw features
+        x = layers.GlobalAveragePooling2D()(weighted_features)
+    else:
+        # Standard flow without attention
+        x = layers.GlobalAveragePooling2D()(features)
+    # --------------------------------
     
     # --- FLEXIBLE HEAD ARCHITECTURE ---
     print("[INFO] Building DEEP 1-Layer Head with Dropout...")
