@@ -34,7 +34,7 @@ def main():
     if not image_data:
         raise ValueError("No images found! Check your CONFIG paths.")
 
-    bad_images_csv = "bad_images.csv"
+    bad_images_csv = CONFIG["BAD_IMG_CSV"]
     if not os.path.exists(bad_images_csv):
         with open(bad_images_csv, "w", newline="") as f:
             csv.writer(f).writerow(["filename", "reason"])
@@ -74,7 +74,7 @@ def main():
             
             ax_raw.clear()
             ax_raw.imshow(raw_tensor.numpy())
-            ax_raw.set_title(f"{item['filename']} | Angle: {item['angle']}\nRaw Shape: {raw_tensor.shape}")
+            ax_raw.set_title(f"{item['filename']} | Angle: {item['angle']} | Speed: {item['speed']}\nRaw Shape: {raw_tensor.shape}")
             ax_raw.axis('off')
             
             ax_proc.clear()
