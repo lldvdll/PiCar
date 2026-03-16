@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "10_cutout",
-    "DESCRIPTION": "Randomly mask image patches during training. Test model on MLiS servers with GPUs",
+    "EXPERIMENT_NAME": "11_unfreeze_40_more_epochs",
+    "DESCRIPTION": "As before, just double the epochs and unfreezing 40 layers",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -77,7 +77,7 @@ CONFIG = {
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_FINETUNE":45,          # Train unfrozen base with low LR
+    "EPOCHS_FINETUNE":95,          # Train unfrozen base with low LR
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-4, 
     "BATCH_SIZE": 32,
@@ -87,7 +87,7 @@ CONFIG = {
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
-    "UNFREEZE_TOP_N_LAYERS": 20,    # Set to 0 to skip fine-tuning entirely
+    "UNFREEZE_TOP_N_LAYERS": 40,    # Set to 0 to skip fine-tuning entirely
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": True,
