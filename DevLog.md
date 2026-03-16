@@ -27,6 +27,9 @@ Done
 - Image loading was taking 2 mins per epoch! Now caching resized images in epoch 1, then still applying augmentation each epoch. 1 hour quicker for 30 epochs!
 - Added cutout augmentation, randomly mask the training images with black rectangles as a form of regularisation so the model can more consistently learn to map sets of features rather than focusing on specific features.
 - Looks much better. Need more epochs to converge, best val was 2nd last epoch. Will run again on GPU.
+- Huge step in improvement, angle still not converged after 100 epochs. Speed looks like it might be converging. Next run for 200 epochs
+- 
+
 
 
 
