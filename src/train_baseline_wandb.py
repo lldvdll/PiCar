@@ -16,6 +16,25 @@ import wandb
 from wandb.integration.keras import WandbMetricsLogger
 
 # ==============================================================================
+# GPU SETUP & VERIFICATION
+# ==============================================================================
+physical_devices = tf.config.list_physical_devices('GPU')
+print(f"\n[INFO] Num GPUs Available: {len(physical_devices)}")
+
+if physical_devices:
+    try:
+        # Enable memory growth so TF doesn't instantly reserve 100% of VRAM
+        for gpu in physical_devices:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        print("[INFO] VRAM memory growth enabled. GPU is ready!\n")
+    except RuntimeError as e:
+        print(f"[ERROR] GPU Setup failed: {e}\n")
+else:
+    print("[WARNING] No GPU detected! TensorFlow will fall back to CPU.\n")
+# ==============================================================================
+
+
+# ==============================================================================
 # 1. HYPERPARAMETERS & CONFIGURATION (All your dials in one place)
 # ==============================================================================
 WANDB_PROJECT = "PiCar"
@@ -58,7 +77,7 @@ CONFIG = {
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_FINETUNE":0,          # Train unfrozen base with low LR
+    "EPOCHS_FINETUNE":15,          # Train unfrozen base with low LR
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-4, 
     "BATCH_SIZE": 32,
@@ -68,7 +87,7 @@ CONFIG = {
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
-    "UNFREEZE_TOP_N_LAYERS": 0,    # Set to 0 to skip fine-tuning entirely
+    "UNFREEZE_TOP_N_LAYERS": 20,    # Set to 0 to skip fine-tuning entirely
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": True,
