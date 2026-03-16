@@ -3,3 +3,4 @@ data/training_data
 figures/
 results/
 experiments/*/wandb
+*__pycache__*
