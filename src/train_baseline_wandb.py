@@ -22,8 +22,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "08_unfreeze_40",
-    "DESCRIPTION": "Unfreeze top 40 layers. Also relaxed the geometric data augmentation and the top crop, and removed some bad images.",
+    "EXPERIMENT_NAME": "09_mlis2_test",
+    "DESCRIPTION": "Test model on MLiS servers with GPUs",
     "OVERWRITE_EXPERIMENT": True,
     
     # --- Data Paths ---
@@ -54,7 +54,7 @@ CONFIG = {
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_FINETUNE":45,          # Train unfrozen base with low LR
+    "EPOCHS_FINETUNE":0,          # Train unfrozen base with low LR
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-4, 
     "BATCH_SIZE": 32,
@@ -64,7 +64,7 @@ CONFIG = {
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
-    "UNFREEZE_TOP_N_LAYERS": 40,    # Set to 0 to skip fine-tuning entirely
+    "UNFREEZE_TOP_N_LAYERS": 0,    # Set to 0 to skip fine-tuning entirely
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": True,
