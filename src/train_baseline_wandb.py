@@ -77,7 +77,7 @@ CONFIG = {
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_FINETUNE":15,          # Train unfrozen base with low LR
+    "EPOCHS_FINETUNE":25,          # Train unfrozen base with low LR
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-4, 
     "BATCH_SIZE": 32,
@@ -175,15 +175,6 @@ def validate_image_paths(df, img_dir):
 
 # --- 2. DATA PIPELINE ---
 
-def reshape_image(img):
-    """ Crop and resize image"""    
-    top = CONFIG.get("CROP_TOP_PIXELS", 0)
-    bottom_crop = CONFIG.get("CROP_BOTTOM_PIXELS", 0)
-    bottom = -bottom_crop if bottom_crop > 0 else None
-    img = img[top:bottom, :, :]
-    img = tf.image.resize(img, [CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"]])
-    return img
-
 # Instantiate Keras layers globally so tf.data doesn't recreate them on every image
 random_rotation_layer = tf.keras.layers.RandomRotation(factor=CONFIG["AUG_ROTATION_FACTOR"], fill_mode='nearest')
 random_translation_layer = tf.keras.layers.RandomTranslation(height_factor=CONFIG["AUG_TILT_FACTOR"], width_factor=0.0, fill_mode='nearest')
@@ -243,35 +234,41 @@ def random_cutout(img, probability, min_pixels, max_pixels):
     do_cutout = tf.random.uniform([]) < probability
     return tf.cond(do_cutout, lambda: _apply_cutout(img), lambda: img)
 
-def preprocess_image(image_path, angle=None, speed=None, augment=False):
-    """
-        Normalise image between 0 and 1.
-        Crop top of image to remove background
-        Resize image
-        Augment (training only)
-        Return image and labels if training, image only if inference
+def reshape_image(img):
+    """ Crop and resize image"""    
+    top = CONFIG.get("CROP_TOP_PIXELS", 0)
+    bottom_crop = CONFIG.get("CROP_BOTTOM_PIXELS", 0)
+    bottom = -bottom_crop if bottom_crop > 0 else None
+    img = img[top:bottom, :, :]
+    img = tf.image.resize(img, [CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"]])
+    return img
+
+def read_and_decode_image(image_path):
+    """ Reads from disk, decodes, and resizes. (Done once per image at epoch 1)
+        Crop and resize BEFORE caching to save massive amounts of RAM
     """
     img = tf.io.read_file(image_path)
     img = tf.image.decode_png(img, channels=CONFIG["CHANNELS"])
     img = tf.cast(img, tf.float32) / 255.0
-    
-    if augment and CONFIG.get("AUG_USE_AUGMENTATION", False):
+    return reshape_image(img)
+
+def apply_augmentations(img, labels):
+    """ Randomly alters the image. (Done every epoch)
+            Normalise image between 0 and 1.
+            Crop top of image to remove background
+            Resize image
+            Augment (training only)
+            Return image and labels if training, image only if inference
+    """
+    if CONFIG.get("AUG_USE_AUGMENTATION", False):
         img = augment_image(img)
-        
-    if augment and CONFIG.get("AUG_USE_AUGMENTATION", False):
         img = random_cutout(
             img, 
             probability=CONFIG["AUG_CUTOUT_PROB"], 
             min_pixels=CONFIG["AUG_CUTOUT_MIN_PIX"], 
             max_pixels=CONFIG["AUG_CUTOUT_MAX_PIX"]
         )
-    
-    img = reshape_image(img)
-        
-    if angle is not None and speed is not None:
-        return img, {'angle_output': angle, 'speed_output': speed}
-    
-    return img
+    return img, labels
 
 def prepare_data_pipelines():
     """
@@ -294,10 +291,7 @@ def prepare_data_pipelines():
     df = df[~df['check_name'].isin(bad_list)].drop(columns=['check_name'])
     print(f"[INFO] Dropped {initial_count - len(df)} manually flagged bad images.")
     
-    # NEW: The Magic Balancing Act
-    # We mathematically sample exactly the length of the dataset, but using our inverse weights.
-    # replace=True means rare sharp-corners will be duplicated, while the thousands of 
-    # straight-line images will be heavily ignored.
+    # Balance dataset according to label join distribution
     balanced_df = df.sample(n=len(df), replace=True, weights='sample_weight', random_state=42)
     
     # Split the fully balanced dataset
@@ -308,9 +302,14 @@ def prepare_data_pipelines():
         angles = dataframe['angle'].values.astype(np.float32)
         speeds = dataframe['speed'].values.astype(np.float32)
         ds = tf.data.Dataset.from_tensor_slices((paths, angles, speeds))
-        ds = ds.map(lambda p, a, s: preprocess_image(p, a, s, augment=is_training), num_parallel_calls=tf.data.AUTOTUNE)
+        ds = ds.map(
+            lambda path, angle, speed: (read_and_decode_image(path), {'angle_output': angle, 'speed_output': speed}), 
+            num_parallel_calls=tf.data.AUTOTUNE
+        )
+        ds = ds.cache()  # Cache loaded and resized images so they're only read once
         if is_training:
-            ds = ds.shuffle(buffer_size=len(dataframe))
+            ds = ds.shuffle(buffer_size=len(dataframe))  # Shuffle data
+            ds = ds.map(apply_augmentations, num_parallel_calls=tf.data.AUTOTUNE)  # Augmentations, always runs
         return ds.batch(CONFIG["BATCH_SIZE"]).prefetch(tf.data.AUTOTUNE)
     
     return create_ds(train_df, is_training=True), create_ds(val_df, is_training=False)
@@ -460,7 +459,7 @@ def main():
     
     test_paths, sub_df = validate_image_paths(sub_df, CONFIG["TEST_IMG_DIR"])
     test_ds = tf.data.Dataset.from_tensor_slices(test_paths)
-    test_ds = test_ds.map(preprocess_image, num_parallel_calls=tf.data.AUTOTUNE).batch(CONFIG["BATCH_SIZE"])
+    test_ds = test_ds.map(read_and_decode_image, num_parallel_calls=tf.data.AUTOTUNE).batch(CONFIG["BATCH_SIZE"])
     
     predictions = best_model.predict(test_ds)
     sub_df['angle'] = predictions[0].flatten()
