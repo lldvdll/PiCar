@@ -24,13 +24,14 @@ Done
 - [08] Next - fix augmentation, unfreeze more layers (40), rerun 
 - Check for other weights for mobilenetv2! imagenet might be a bad starting point. Actually the only pretrained option was imagenet...
 - Run planned reduced augmentation (reduce rotation, tilt, and some more bad image removal, blind unfreeze 40 layers). Running now. No improvement, angles worse, weird validation loss spikes at epoch 36 and 46.
+- Image loading was taking 2 mins per epoch! Now caching resized images in epoch 1, then still applying augmentation each epoch. 1 hour quicker for 30 epochs!
 - Added cutout augmentation, randomly mask the training images with black rectangles as a form of regularisation so the model can more consistently learn to map sets of features rather than focusing on specific features.
+- Looks much better. Need more epochs to converge, best val was 2nd last epoch. Will run again on GPU.
 
 
 
 Next
 - cut after block 7 - i think for this i would like to cut blocks 10-17, but freeze blocks 1-6, giving the model space to learn new features, but deleting the deeper stuff in place of the current transformer block. But please you'll need to help me identify the correct layers, or add a layer to block mapping to the code.
-- cutout augmentation. I like this idea and want to see how it performs, but don't want to do it while we still have a lot of redundancy
 - ROI masking - this would allow us to be less agressive in the centre,
  recovering important road signage, while also cutting useless background from the outer edges.
 -Splitting the transformer layers - again, makes perfect sense to decouple the context analyser component for the different objectives. It also makes a bit of sense to combine them because they are not independant, but let's try this first.
