@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "09_mlis2_test",
-    "DESCRIPTION": "Test model on MLiS servers with GPUs",
+    "EXPERIMENT_NAME": "10_cutout",
+    "DESCRIPTION": "Randomly mask image patches during training. Test model on MLiS servers with GPUs",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
