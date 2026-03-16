@@ -25,6 +25,7 @@ CONFIG = {
     "EXPERIMENT_NAME": "09_mlis2_test",
     "DESCRIPTION": "Test model on MLiS servers with GPUs",
     "OVERWRITE_EXPERIMENT": True,
+    "LOGGING_MODE": "online",  # From online, offline, and disabled
     
     # --- Data Paths ---
     "TRAIN_CSV": os.path.join("data", "train_clean_weighted.csv"),
@@ -94,16 +95,17 @@ def cleanup_existing_experiment(config, exp_dir):
     if os.path.exists(exp_dir):
         shutil.rmtree(exp_dir)
         print(f"  -> Deleted local directory: {exp_dir}")
-        
-    api = wandb.Api()
-    try:
-        path = f"{WANDB_ENTITY}/{WANDB_PROJECT}"
-        runs = api.runs(path, filters={"display_name": config["EXPERIMENT_NAME"]})
-        for run in runs:
-            run.delete()
-            print(f"  -> Deleted W&B cloud run: {run.id}")
-    except Exception as e:
-        pass
+    
+    if config["LOGGING_MODE"] == "online":
+        api = wandb.Api()
+        try:
+            path = f"{WANDB_ENTITY}/{WANDB_PROJECT}"
+            runs = api.runs(path, filters={"display_name": config["EXPERIMENT_NAME"]})
+            for run in runs:
+                run.delete()
+                print(f"  -> Deleted W&B cloud run: {run.id}")
+        except Exception as e:
+            pass
 
     log_path = os.path.join("experiments", "model_log.csv")
     if os.path.exists(log_path):
@@ -366,7 +368,7 @@ def main():
         json.dump(CONFIG, f, indent=4)
     
     wandb.init(project=WANDB_PROJECT, entity=WANDB_ENTITY, name=CONFIG["EXPERIMENT_NAME"], 
-               dir=exp_dir, config=CONFIG, notes=CONFIG["DESCRIPTION"])
+               dir=exp_dir, config=CONFIG, notes=CONFIG["DESCRIPTION"], mode=CONFIG["LOGGING_MODE"])
     
     os.makedirs("models", exist_ok=True)
     train_ds, val_ds = prepare_data_pipelines()
@@ -426,11 +428,12 @@ def main():
     best_epoch_human = best_epoch_index + 1
     best_val_loss = float(combined_val_loss[best_epoch_index])
     
-    append_to_model_log(CONFIG, best_epoch_human, best_val_loss, wandb.run.id)
     
-    wandb.run.summary["training_time_minutes"] = round(training_time, 2)
-    wandb.run.summary["best_epoch"] = best_epoch_human
-    wandb.run.summary["best_val_loss"] = best_val_loss
+    if CONFIG["LOGGING_MODE"] != "disabled":
+        append_to_model_log(CONFIG, best_epoch_human, best_val_loss, wandb.run.id)
+        wandb.run.summary["training_time_minutes"] = round(training_time, 2)
+        wandb.run.summary["best_epoch"] = best_epoch_human
+        wandb.run.summary["best_val_loss"] = best_val_loss
     
     print("\n[INFO] Generating Kaggle submission...")
     best_model = tf.keras.models.load_model(os.path.join(exp_dir, "best_model.h5"))
