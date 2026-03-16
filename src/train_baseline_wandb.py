@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "12_unfreeze_60_200_epochs",
-    "DESCRIPTION": "As before, just double the epochs and unfreezing 40 layers",
+    "EXPERIMENT_NAME": "13_unfreeze_60_500_epochs",
+    "DESCRIPTION": "500 epochs to ensure convergence",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
