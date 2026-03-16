@@ -34,7 +34,7 @@ CONFIG = {
     "BAD_IMG_CSV": os.path.join("data", "bad_images.csv"),
     
     # --- Image Preprocessing ---
-    "IMG_WIDTH_TARGET": 160,
+    "IMG_WIDTH_TARGET": 160,  
     "IMG_HEIGHT_TARGET": 96,
     "CROP_TOP_PIXELS": 110, 
     "CROP_BOTTOM_PIXELS": 30, 
@@ -51,6 +51,9 @@ CONFIG = {
     "AUG_NOISE_STDDEV": 0.005,
     "AUG_ROTATION_FACTOR": 0.005,
     "AUG_TILT_FACTOR": 0.01,
+    "AUG_CUTOUT_PROB": 0.5,        # 50% chance to apply cutout
+    "AUG_CUTOUT_MIN_PIX": 10,      # Minimum mask size
+    "AUG_CUTOUT_MAX_PIX": 50,      # Maximum mask size
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
@@ -191,6 +194,34 @@ def augment_image(img):
 
     return tf.clip_by_value(img, 0.0, 1.0)
 
+
+def random_cutout(img, probability, min_pixels, max_pixels):
+    """Randomly masks a rectangular region of the image with black pixels."""
+    def _apply_cutout(img):
+        shape = tf.shape(img)
+        H, W = shape[0], shape[1]
+
+        # Random mask dimensions
+        h = tf.random.uniform([], minval=min_pixels, maxval=max_pixels, dtype=tf.int32)
+        w = tf.random.uniform([], minval=min_pixels, maxval=max_pixels, dtype=tf.int32)
+
+        # Random anchor position (top-left corner)
+        y = tf.random.uniform([], minval=0, maxval=tf.maximum(1, H - h), dtype=tf.int32)
+        x = tf.random.uniform([], minval=0, maxval=tf.maximum(1, W - w), dtype=tf.int32)
+
+        # Create a boolean mask grid
+        yy, xx = tf.meshgrid(tf.range(H), tf.range(W), indexing='ij')
+        mask_y = tf.logical_and(yy >= y, yy < y + h)
+        mask_x = tf.logical_and(xx >= x, xx < x + w)
+        mask = tf.expand_dims(tf.logical_and(mask_y, mask_x), -1)
+
+        # Apply mask (replace True values with 0.0)
+        return tf.where(mask, tf.zeros_like(img), img)
+
+    # Only apply if we beat the random probability
+    do_cutout = tf.random.uniform([]) < probability
+    return tf.cond(do_cutout, lambda: _apply_cutout(img), lambda: img)
+
 def preprocess_image(image_path, angle=None, speed=None, augment=False):
     """
         Normalise image between 0 and 1.
@@ -205,6 +236,14 @@ def preprocess_image(image_path, angle=None, speed=None, augment=False):
     
     if augment and CONFIG.get("AUG_USE_AUGMENTATION", False):
         img = augment_image(img)
+        
+    if augment and CONFIG.get("AUG_USE_AUGMENTATION", False):
+        img = random_cutout(
+            img, 
+            probability=CONFIG["AUG_CUTOUT_PROB"], 
+            min_pixels=CONFIG["AUG_CUTOUT_MIN_PIX"], 
+            max_pixels=CONFIG["AUG_CUTOUT_MAX_PIX"]
+        )
     
     img = reshape_image(img)
         

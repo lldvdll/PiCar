@@ -24,7 +24,7 @@ Done
 - [08] Next - fix augmentation, unfreeze more layers (40), rerun 
 - Check for other weights for mobilenetv2! imagenet might be a bad starting point. Actually the only pretrained option was imagenet...
 - Run planned reduced augmentation (reduce rotation, tilt, and some more bad image removal, blind unfreeze 40 layers). Running now. No improvement, angles worse, weird validation loss spikes at epoch 36 and 46.
-
+- Added cutout augmentation, randomly mask the training images with black rectangles as a form of regularisation so the model can more consistently learn to map sets of features rather than focusing on specific features.
 
 
 
