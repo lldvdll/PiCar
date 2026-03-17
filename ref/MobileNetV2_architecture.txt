@@ -1,0 +1,173 @@
+INDEX | LAYER NAME (MobileNetV2)
+--------------------------------------------------
+    0 | input_2
+    1 | Conv1
+    2 | bn_Conv1
+    3 | Conv1_relu
+    4 | expanded_conv_depthwise
+    5 | expanded_conv_depthwise_BN
+    6 | expanded_conv_depthwise_relu
+    7 | expanded_conv_project
+    8 | ---> [SAFE CUT POINT] expanded_conv_project_BN
+--------------------------------------------------
+    9 | block_1_expand
+   10 | block_1_expand_BN
+   11 | block_1_expand_relu  (Start of new block)
+   12 | block_1_pad
+   13 | block_1_depthwise
+   14 | block_1_depthwise_BN
+   15 | block_1_depthwise_relu
+   16 | block_1_project
+   17 | ---> [SAFE CUT POINT] block_1_project_BN
+--------------------------------------------------
+   18 | block_2_expand
+   19 | block_2_expand_BN
+   20 | block_2_expand_relu  (Start of new block)
+   21 | block_2_depthwise
+   22 | block_2_depthwise_BN
+   23 | block_2_depthwise_relu
+   24 | block_2_project
+   25 | block_2_project_BN
+   26 | ---> [SAFE CUT POINT] block_2_add
+--------------------------------------------------
+   27 | block_3_expand
+   28 | block_3_expand_BN
+   29 | block_3_expand_relu  (Start of new block)
+   30 | block_3_pad
+   31 | block_3_depthwise
+   32 | block_3_depthwise_BN
+   33 | block_3_depthwise_relu
+   34 | block_3_project
+   35 | ---> [SAFE CUT POINT] block_3_project_BN
+--------------------------------------------------
+   36 | block_4_expand
+   37 | block_4_expand_BN
+   38 | block_4_expand_relu  (Start of new block)
+   39 | block_4_depthwise
+   40 | block_4_depthwise_BN
+   41 | block_4_depthwise_relu
+   42 | block_4_project
+   43 | block_4_project_BN
+   44 | ---> [SAFE CUT POINT] block_4_add
+--------------------------------------------------
+   45 | block_5_expand
+   46 | block_5_expand_BN
+   47 | block_5_expand_relu  (Start of new block)
+   48 | block_5_depthwise
+   49 | block_5_depthwise_BN
+   50 | block_5_depthwise_relu
+   51 | block_5_project
+   52 | block_5_project_BN
+   53 | ---> [SAFE CUT POINT] block_5_add
+--------------------------------------------------
+   54 | block_6_expand
+   55 | block_6_expand_BN
+   56 | block_6_expand_relu  (Start of new block)
+   57 | block_6_pad
+   58 | block_6_depthwise
+   59 | block_6_depthwise_BN
+   60 | block_6_depthwise_relu
+   61 | block_6_project
+   62 | ---> [SAFE CUT POINT] block_6_project_BN
+--------------------------------------------------
+   63 | block_7_expand
+   64 | block_7_expand_BN
+   65 | block_7_expand_relu  (Start of new block)
+   66 | block_7_depthwise
+   67 | block_7_depthwise_BN
+   68 | block_7_depthwise_relu
+   69 | block_7_project
+   70 | block_7_project_BN
+   71 | ---> [SAFE CUT POINT] block_7_add
+--------------------------------------------------
+   72 | block_8_expand
+   73 | block_8_expand_BN
+   74 | block_8_expand_relu  (Start of new block)
+   75 | block_8_depthwise
+   76 | block_8_depthwise_BN
+   77 | block_8_depthwise_relu
+   78 | block_8_project
+   79 | block_8_project_BN
+   80 | ---> [SAFE CUT POINT] block_8_add
+--------------------------------------------------
+   81 | block_9_expand
+   82 | block_9_expand_BN
+   83 | block_9_expand_relu  (Start of new block)
+   84 | block_9_depthwise
+   85 | block_9_depthwise_BN
+   86 | block_9_depthwise_relu
+   87 | block_9_project
+   88 | block_9_project_BN
+   89 | ---> [SAFE CUT POINT] block_9_add
+--------------------------------------------------
+   90 | block_10_expand
+   91 | block_10_expand_BN
+   92 | block_10_expand_relu  (Start of new block)
+   93 | block_10_depthwise
+   94 | block_10_depthwise_BN
+   95 | block_10_depthwise_relu
+   96 | block_10_project
+   97 | ---> [SAFE CUT POINT] block_10_project_BN
+--------------------------------------------------
+   98 | block_11_expand
+   99 | block_11_expand_BN
+  100 | block_11_expand_relu  (Start of new block)
+  101 | block_11_depthwise
+  102 | block_11_depthwise_BN
+  103 | block_11_depthwise_relu
+  104 | block_11_project
+  105 | block_11_project_BN
+  106 | ---> [SAFE CUT POINT] block_11_add
+--------------------------------------------------
+  107 | block_12_expand
+  108 | block_12_expand_BN
+  109 | block_12_expand_relu  (Start of new block)
+  110 | block_12_depthwise
+  111 | block_12_depthwise_BN
+  112 | block_12_depthwise_relu
+  113 | block_12_project
+  114 | block_12_project_BN
+  115 | ---> [SAFE CUT POINT] block_12_add
+--------------------------------------------------
+  116 | block_13_expand
+  117 | block_13_expand_BN
+  118 | block_13_expand_relu  (Start of new block)
+  119 | block_13_pad
+  120 | block_13_depthwise
+  121 | block_13_depthwise_BN
+  122 | block_13_depthwise_relu
+  123 | block_13_project
+  124 | ---> [SAFE CUT POINT] block_13_project_BN
+--------------------------------------------------
+  125 | block_14_expand
+  126 | block_14_expand_BN
+  127 | block_14_expand_relu  (Start of new block)
+  128 | block_14_depthwise
+  129 | block_14_depthwise_BN
+  130 | block_14_depthwise_relu
+  131 | block_14_project
+  132 | block_14_project_BN
+  133 | ---> [SAFE CUT POINT] block_14_add
+--------------------------------------------------
+  134 | block_15_expand
+  135 | block_15_expand_BN
+  136 | block_15_expand_relu  (Start of new block)
+  137 | block_15_depthwise
+  138 | block_15_depthwise_BN
+  139 | block_15_depthwise_relu
+  140 | block_15_project
+  141 | block_15_project_BN
+  142 | ---> [SAFE CUT POINT] block_15_add
+--------------------------------------------------
+  143 | block_16_expand
+  144 | block_16_expand_BN
+  145 | block_16_expand_relu  (Start of new block)
+  146 | block_16_depthwise
+  147 | block_16_depthwise_BN
+  148 | block_16_depthwise_relu
+  149 | block_16_project
+  150 | ---> [SAFE CUT POINT] block_16_project_BN
+--------------------------------------------------
+  151 | Conv_1
+  152 | Conv_1_bn
+  153 | out_relu
