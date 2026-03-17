@@ -12,3 +12,7 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
 2026-03-11 02:53:16,04_unbiased_training_data,lhaj4bcz,35,0.01579,Removed bias from the training data by weighting images by their frequency in the speed/angle join distribution
 2026-03-13 14:29:31,08_unfreeze_40,vz9wnhx3,34,0.01447,"Unfreeze top 40 layers. Also relaxed the geometric data augmentation and the top crop, and removed some bad images."
 2026-03-16 13:04:21,09_mlis2_test,y9hm7qnj,29,0.01745,Test model on MLiS servers with GPUs
+2026-03-16 14:31:04,10_cutout,fziwmyjn,45,0.01585,Randomly mask image patches during training. Test model on MLiS servers with GPUs
+2026-03-16 14:51:20,11_unfreeze_40_more_epochs,7yrvci8b,84,0.01044,"As before, just double the epochs and unfreezing 40 layers"
+2026-03-16 15:30:11,12_unfreeze_60_200_epochs,6ocx50st,187,0.00843,"As before, just double the epochs and unfreezing 40 layers"
+2026-03-16 16:17:03,13_unfreeze_60_500_epochs,32ldklhy,164,0.00944,500 epochs to ensure convergence
