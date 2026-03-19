@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "17_split_attention",
-    "DESCRIPTION": "1 shared attention block, then 1 per output",
+    "EXPERIMENT_NAME": "18_cutout_crop_cut_less_agressive",
+    "DESCRIPTION": "Less agressive cropping, cutout augmentation, and layer cuts.",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -56,8 +56,8 @@ CONFIG = {
     # --- Image Preprocessing ---
     "IMG_WIDTH_TARGET": 160,  
     "IMG_HEIGHT_TARGET": 96,
-    "CROP_TOP_PIXELS": 110, 
-    "CROP_BOTTOM_PIXELS": 30, 
+    "CROP_TOP_PIXELS": 100, 
+    "CROP_BOTTOM_PIXELS": 20, 
     "CHANNELS": 3,
     
 # --- Data Augmentation ---
@@ -71,15 +71,15 @@ CONFIG = {
     "AUG_NOISE_STDDEV": 0.005,
     "AUG_ROTATION_FACTOR": 0.005,
     "AUG_TILT_FACTOR": 0.01,
-    "AUG_CUTOUT_PROB": 0.5,        # 50% chance to apply cutout
+    "AUG_CUTOUT_PROB": 0.2,        # 50% chance to apply cutout
     "AUG_CUTOUT_MIN_PIX": 10,      # Minimum mask size
-    "AUG_CUTOUT_MAX_PIX": 50,      # Maximum mask size
+    "AUG_CUTOUT_MAX_PIX": 30,      # Maximum mask size
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
     "EPOCHS_FINETUNE": 195,          # Train unfrozen base with low LR
     "LEARNING_RATE_WARMUP": 1e-3,
-    "LEARNING_RATE_FINETUNE": 1e-4, 
+    "LEARNING_RATE_FINETUNE": 1e-5, 
     "BATCH_SIZE": 32,
     "OPTIMIZER": "adam",
     "LOSS_FUNCTION": "mse",
@@ -87,7 +87,7 @@ CONFIG = {
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
-    "CUT_AT_BLOCK": 10,                     # The block number to cut the model at (1 to 16)
+    "CUT_AT_BLOCK": 12,                     # The block number to cut the model at (1 to 16)
     "FREEZE_UP_TO_BLOCK": 6,                # Freezes blocks 1 through 6 during Phase 2
     
     # --- Attention Head ---

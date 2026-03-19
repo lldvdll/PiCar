@@ -33,7 +33,8 @@ Done
 - [15] Run with correct block based freezing. Slight improvement
 - Now running with cuts - cut at block 10, freeze at block 6. In theory the deeper layers have learned too many specifics which are too detailed for our needs. We keep the trunk of the network, chop off the unnecesary details, and let the attention heads resolve the global spatial relationships. Marginally worse. Way faster convergence
 - [16] Next add an extra attention block. Not really any improvement at all.
-- [17] Split the attention blocks now
+- [17] Split the attention blocks now. Slight improvements, but still not hugely better
+- [18] Less agressive alround - layer cut 10>12, cutout prob 05.>0.2, cutout max_pixels 50>30, crop 110,30>100,20
 
 
 Next
