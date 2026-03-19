@@ -44,3 +44,10 @@ conda create -n pi_car python=3.9
 conda activate pi_car
 pip install -r PiCar/requirements.txt
 ```
+
+- check gpu status ```nvidia-smi```
+- pull latest code ```git pull```
+- activate environment ```conda activate pi_car```
+- install requirements ```pip install -r PiCar/requirements.txt```
+- 
+- 
