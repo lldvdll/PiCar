@@ -88,7 +88,7 @@ CONFIG = {
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
     "CUT_AT_BLOCK": 10,                     # The block number to cut the model at (1 to 16)
-    "FREEZE_UP_TO_BLOCK": 8,                # Freezes blocks 1 through 6 during Phase 2
+    "FREEZE_UP_TO_BLOCK": 6,                # Freezes blocks 1 through 6 during Phase 2
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": True,
