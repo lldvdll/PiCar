@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "18_cutout_crop_cut_less_agressive",
-    "DESCRIPTION": "Less agressive cropping, cutout augmentation, and layer cuts.",
+    "EXPERIMENT_NAME": "19_unfreeze_all",
+    "DESCRIPTION": "Unfreeze all layers, gradual learning rate decay.",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -75,11 +75,12 @@ CONFIG = {
     "AUG_CUTOUT_MIN_PIX": 10,      # Minimum mask size
     "AUG_CUTOUT_MAX_PIX": 30,      # Maximum mask size
     
-    # --- Two-Phase Training Hyperparameters ---
+# --- Progressive Unfreezing Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_FINETUNE": 195,          # Train unfrozen base with low LR
+    "EPOCHS_PER_UNFREEZE_STEP": 15, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
-    "LEARNING_RATE_FINETUNE": 1e-5, 
+    "LEARNING_RATE_FINETUNE_START": 1e-4, # Starting LR for the first unfrozen block
+    "UNFREEZE_LR_DECAY": 0.8,             # Multiply LR by this amount after every block step
     "BATCH_SIZE": 32,
     "OPTIMIZER": "adam",
     "LOSS_FUNCTION": "mse",
@@ -87,8 +88,8 @@ CONFIG = {
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
-    "CUT_AT_BLOCK": 12,                     # The block number to cut the model at (1 to 16)
-    "FREEZE_UP_TO_BLOCK": 6,                # Freezes blocks 1 through 6 during Phase 2
+    "CUT_AT_BLOCK": None,                   # Defaults to block 16
+    "FREEZE_UP_TO_BLOCK": 0,                # 0 means eventually unfreeze all blocks (1 down to 1)
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": True,
@@ -396,12 +397,21 @@ def build_initial_model():
     # -----------------------------------
 
     model = models.Model(inputs=inputs, outputs=[angle_out, speed_out])
-    opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_WARMUP"])
+    opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_WARMUP"], clipnorm=1.0)
     model.compile(optimizer=opt,
                   loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
                   metrics={'angle_output': 'mae', 'speed_output': 'mae'})
                   
     return model, base_model
+
+
+class WandbLRCustomLogger(tf.keras.callbacks.Callback):
+    """Logs the current learning rate to Weights & Biases."""
+    def on_epoch_end(self, epoch, logs=None):
+        if wandb.run is not None:
+            # Safely grab the numeric value of the learning rate
+            lr = float(tf.keras.backend.get_value(self.model.optimizer.learning_rate))
+            wandb.log({"learning_rate": lr}, commit=False)
 
 # --- 4. MAIN ORCHESTRATOR ---
 def main():
@@ -429,6 +439,7 @@ def main():
     
     callbacks = [
         WandbMetricsLogger(),
+        WandbLRCustomLogger(),  # <--- Add the new tracker here
         ModelCheckpoint(filepath=os.path.join(exp_dir, "best_model.h5"), monitor="val_loss", save_best_only=True, verbose=1)
     ]
     
@@ -444,38 +455,58 @@ def main():
     combined_val_loss = history_1.history['val_loss']
     
     # ------------------------------------------------------------------------------------
-    # PHASE 2: FINE-TUNING (Unfrozen Base, Low LR)
+    # PHASE 2: PROGRESSIVE UNFREEZING (Top-Down)
     # ------------------------------------------------------------------------------------
-    if CONFIG["EPOCHS_FINETUNE"] > 0:
-        print(f"\n[INFO] --- PHASE 2: FINE-TUNING (Freezing up to Block {CONFIG['FREEZE_UP_TO_BLOCK']}) ---")
+    start_block = CONFIG.get("CUT_AT_BLOCK")
+    if start_block is None:
+        start_block = 16  # Default to top block of MobileNetV2
         
-        base_model.trainable = True
+    end_block = CONFIG.get("FREEZE_UP_TO_BLOCK", 0)
+    
+    current_lr = CONFIG["LEARNING_RATE_FINETUNE_START"]
+    current_epoch = CONFIG["EPOCHS_WARMUP"]
+    epochs_per_step = CONFIG["EPOCHS_PER_UNFREEZE_STEP"]
+    lr_decay = CONFIG["UNFREEZE_LR_DECAY"]
+
+    if epochs_per_step > 0:
+        base_model.trainable = True # Set master flag to True so we can selectively freeze
         
-        # Build a list of block string prefixes to freeze (e.g., 'block_1_', 'block_2_')
-        blocks_to_freeze = [f"block_{i}_" for i in range(1, CONFIG["FREEZE_UP_TO_BLOCK"] + 1)]
-        
-        for layer in base_model.layers:
-            # Freeze the initial stem layers and all blocks up to our target
-            if layer.name.startswith('Conv1') or any(b in layer.name for b in blocks_to_freeze):
-                layer.trainable = False
-                
-        # We MUST recompile the model for the trainability changes to take effect
-        opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_FINETUNE"])
-        model.compile(optimizer=opt,
-                      loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
-                      metrics={'angle_output': 'mae', 'speed_output': 'mae'})
-        
-        total_epochs = CONFIG["EPOCHS_WARMUP"] + CONFIG["EPOCHS_FINETUNE"]
-        
-        # Notice we use `initial_epoch` so Keras/W&B knows we are continuing where we left off
-        history_2 = model.fit(
-            train_ds, 
-            validation_data=val_ds, 
-            epochs=total_epochs, 
-            initial_epoch=CONFIG["EPOCHS_WARMUP"], 
-            callbacks=callbacks
-        )
-        combined_val_loss.extend(history_2.history['val_loss'])
+        # Iterate backwards: e.g., from Block 16 down to Block 1
+        for target_block in range(start_block, end_block, -1):
+            print(f"\n[INFO] --- PHASE 2: UNFREEZING DOWN TO BLOCK {target_block} ---")
+            print(f"[INFO] Current Learning Rate: {current_lr:.2e}")
+            
+            # 1. Freeze everything BELOW the target_block
+            blocks_to_freeze = [f"block_{i}_" for i in range(1, target_block)]
+            
+            for layer in base_model.layers:
+                # Always freeze the very first Conv1 stem, and any blocks below our target
+                if layer.name.startswith('Conv1') or any(b in layer.name for b in blocks_to_freeze):
+                    layer.trainable = False
+                else:
+                    layer.trainable = True  # Explicitly unfreeze the current target and anything above it
+                    
+            # 2. Recompile to apply trainability changes and new LR (Added clipnorm for safety!)
+            opt = optimizers.Adam(learning_rate=current_lr, clipnorm=1.0)
+            model.compile(optimizer=opt,
+                          loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
+                          metrics={'angle_output': 'mae', 'speed_output': 'mae'})
+            
+            # 3. Train for the step duration
+            target_epoch = current_epoch + epochs_per_step
+            
+            history_step = model.fit(
+                train_ds, 
+                validation_data=val_ds, 
+                epochs=target_epoch, 
+                initial_epoch=current_epoch, 
+                callbacks=callbacks
+            )
+            combined_val_loss.extend(history_step.history['val_loss'])
+            
+            # 4. Prepare for the next block down
+            current_epoch = target_epoch
+            current_lr *= lr_decay
 
     # ------------------------------------------------------------------------------------
     # EVALUATION & LOGGING
