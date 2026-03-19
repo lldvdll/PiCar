@@ -16,3 +16,6 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
 2026-03-16 14:51:20,11_unfreeze_40_more_epochs,7yrvci8b,84,0.01044,"As before, just double the epochs and unfreezing 40 layers"
 2026-03-16 15:30:11,12_unfreeze_60_200_epochs,6ocx50st,187,0.00843,"As before, just double the epochs and unfreezing 40 layers"
 2026-03-16 16:17:03,13_unfreeze_60_500_epochs,32ldklhy,164,0.00944,500 epochs to ensure convergence
+2026-03-19 12:29:03,14_unfreeze_by_block,rmwtxoun,169,0.00848,Block instead of layer
+2026-03-19 19:03:36,15_cut_block_10,9rzpc148,78,0.01149,Cut off at block 10 and freeze 6
+2026-03-19 19:59:00,16_2_attention_block,femf7na5,185,0.00881,Add another attention block. Run for 200 epochs
