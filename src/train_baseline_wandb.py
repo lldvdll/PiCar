@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "13_unfreeze_60_500_epochs",
-    "DESCRIPTION": "500 epochs to ensure convergence",
+    "EXPERIMENT_NAME": "14_unfreeze_by_block",
+    "DESCRIPTION": "Block instead of layer",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -87,11 +87,14 @@ CONFIG = {
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
-    "UNFREEZE_TOP_N_LAYERS": 60,    # Set to 0 to skip fine-tuning entirely
+    "CUT_AT_BLOCK": None,                     # The block number to cut the model at (1 to 16)
+    "FREEZE_UP_TO_BLOCK": 10,                # Freezes blocks 1 through 6 during Phase 2
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": True,
-    "ATTN_BOTTLENECK_CHANNELS": 128, # Reduces 1280 channels down to this before attention
+    "ATTN_BOTTLENECK_CHANNELS": 128, 
+    "NUM_ATTN_BLOCKS": 1,                   # 0 = No attention, 1 = 1 block, 2 = 2 blocks, etc.
+    "SPLIT_ATTN_AT_BLOCK": None,               # 0 = Split immediately, 1 = 1 shared then split, etc.
     
     # --- Head Flexibility Toggle ---
     "DENSE_UNITS_1": 256,       # 256
@@ -323,46 +326,76 @@ def build_initial_model():
                         
     """
     inputs = tf.keras.Input(shape=CONFIG["INPUT_SHAPE"])
-    base_model = MobileNetV2(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
+    full_base_model = MobileNetV2(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
     
-    # Phase 1: Base is completely frozen
-    base_model.trainable = False 
-    features = base_model(inputs, training=False)
-    
-    # --- OPTIONAL ATTENTION BLOCK ---
-    if CONFIG.get("USE_ATTENTION_BLOCK", False):
-        print("[INFO] Building Spatial Attention Block...")
-        # 1. Bottleneck: Reduce channel depth to save compute (1280 -> 128)
-        reduced_features = layers.Conv2D(CONFIG["ATTN_BOTTLENECK_CHANNELS"], kernel_size=1, activation="relu")(features)
+    # 2. Cut the network by BLOCK. Safely detect if the block ends in an 'add' or 'project_BN'
+    cut_block = CONFIG.get("CUT_AT_BLOCK", 16)
+    if cut_block is None:
+        cut_block = 16
         
-        # 2. Attention Map: Create a 1-channel spatial heatmap (values 0.0 to 1.0)
-        attention_map = layers.Conv2D(1, kernel_size=1, activation="sigmoid")(reduced_features)
-        
-        # 3. Apply Attention: Multiply the ORIGINAL features (1280) by the heatmap (1)
-        weighted_features = layers.Multiply()([features, attention_map])
-        
-        # Pass the weighted features into the GAP layer instead of the raw features
-        x = layers.GlobalAveragePooling2D()(weighted_features)
+    layer_names = [l.name for l in full_base_model.layers]
+    if f"block_{cut_block}_add" in layer_names:
+        cut_layer_name = f"block_{cut_block}_add"
     else:
-        # Standard flow without attention
-        x = layers.GlobalAveragePooling2D()(features)
-    # --------------------------------
+        cut_layer_name = f"block_{cut_block}_project_BN"
+        
+    print(f"[INFO] Slicing MobileNetV2 at Block {cut_block} (Layer: {cut_layer_name})")
     
-    # --- FLEXIBLE HEAD ARCHITECTURE ---
-    print("[INFO] Building DEEP 1-Layer Head with Dropout...")
-    x = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
-    x = layers.Dropout(CONFIG["DROPOUT_RATE"])(x)
+    cut_layer_output = full_base_model.get_layer(cut_layer_name).output
+    base_model = models.Model(inputs=full_base_model.input, outputs=cut_layer_output, name="Amputated_MobileNetV2")
+    
+    base_model.trainable = False 
+    x = base_model(inputs, training=False)
+    
+    # --- DYNAMIC ATTENTION BLOCK LOGIC ---
+    num_attn = CONFIG.get("NUM_ATTN_BLOCKS", 0)
+    
+    # Safely handle None by defaulting to num_attn (no split)
+    split_val = CONFIG.get("SPLIT_ATTN_AT_BLOCK")
+    if split_val is None:
+        split_val = num_attn
+        
+    split_at = min(split_val, num_attn) 
+    remaining_blocks = num_attn - split_at
+
+    # Add shared attention blocks (before the split)
+    for i in range(split_at):
+        reduced = layers.Conv2D(CONFIG["ATTN_BOTTLENECK_CHANNELS"], kernel_size=1, activation="relu", name=f"shared_bot_{i}")(x)
+        attn_map = layers.Conv2D(1, kernel_size=1, activation="sigmoid", name=f"shared_map_{i}")(reduced)
+        x = layers.Multiply(name=f"shared_mul_{i}")([x, attn_map])
+
+    # --- ANGLE BRANCH ---
+    x_angle = x
+    for i in range(remaining_blocks):
+        reduced = layers.Conv2D(CONFIG["ATTN_BOTTLENECK_CHANNELS"], kernel_size=1, activation="relu", name=f"angle_bot_{i}")(x_angle)
+        attn_map = layers.Conv2D(1, kernel_size=1, activation="sigmoid", name=f"angle_map_{i}")(reduced)
+        x_angle = layers.Multiply(name=f"angle_mul_{i}")([x_angle, attn_map])
+
+    x_angle = layers.GlobalAveragePooling2D(name="angle_gap")(x_angle)
+    x_angle = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x_angle)
+    x_angle = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_angle)
     if CONFIG["DENSE_UNITS_2"] is not None:
-        print("[INFO] Building DEEP 2-Layer Head with Dropout...")
-        x = layers.Dense(CONFIG["DENSE_UNITS_2"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
-        x = layers.Dropout(CONFIG["DROPOUT_RATE"])(x)
-    # ----------------------------------
-    
-    angle_out = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='angle_output')(x)
-    speed_out = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='speed_output')(x)
-    
+        x_angle = layers.Dense(CONFIG["DENSE_UNITS_2"], activation=CONFIG["ACTIVATION_HIDDEN"])(x_angle)
+        x_angle = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_angle)
+    angle_out = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='angle_output')(x_angle)
+
+    # --- SPEED BRANCH ---
+    x_speed = x
+    for i in range(remaining_blocks):
+        reduced = layers.Conv2D(CONFIG["ATTN_BOTTLENECK_CHANNELS"], kernel_size=1, activation="relu", name=f"speed_bot_{i}")(x_speed)
+        attn_map = layers.Conv2D(1, kernel_size=1, activation="sigmoid", name=f"speed_map_{i}")(reduced)
+        x_speed = layers.Multiply(name=f"speed_mul_{i}")([x_speed, attn_map])
+
+    x_speed = layers.GlobalAveragePooling2D(name="speed_gap")(x_speed)
+    x_speed = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x_speed)
+    x_speed = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_speed)
+    if CONFIG["DENSE_UNITS_2"] is not None:
+        x_speed = layers.Dense(CONFIG["DENSE_UNITS_2"], activation=CONFIG["ACTIVATION_HIDDEN"])(x_speed)
+        x_speed = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_speed)
+    speed_out = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='speed_output')(x_speed)
+    # -----------------------------------
+
     model = models.Model(inputs=inputs, outputs=[angle_out, speed_out])
-    
     opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_WARMUP"])
     model.compile(optimizer=opt,
                   loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
@@ -413,13 +446,19 @@ def main():
     # ------------------------------------------------------------------------------------
     # PHASE 2: FINE-TUNING (Unfrozen Base, Low LR)
     # ------------------------------------------------------------------------------------
-    if CONFIG["UNFREEZE_TOP_N_LAYERS"] > 0 and CONFIG["EPOCHS_FINETUNE"] > 0:
-        print(f"\n[INFO] --- PHASE 2: FINE-TUNING TOP {CONFIG['UNFREEZE_TOP_N_LAYERS']} LAYERS ({CONFIG['EPOCHS_FINETUNE']} Epochs) ---")
+    if CONFIG["EPOCHS_FINETUNE"] > 0:
+        print(f"\n[INFO] --- PHASE 2: FINE-TUNING (Freezing up to Block {CONFIG['FREEZE_UP_TO_BLOCK']}) ---")
         
         base_model.trainable = True
-        for layer in base_model.layers[:-CONFIG["UNFREEZE_TOP_N_LAYERS"]]:
-            layer.trainable = False
-            
+        
+        # Build a list of block string prefixes to freeze (e.g., 'block_1_', 'block_2_')
+        blocks_to_freeze = [f"block_{i}_" for i in range(1, CONFIG["FREEZE_UP_TO_BLOCK"] + 1)]
+        
+        for layer in base_model.layers:
+            # Freeze the initial stem layers and all blocks up to our target
+            if layer.name.startswith('Conv1') or any(b in layer.name for b in blocks_to_freeze):
+                layer.trainable = False
+                
         # We MUST recompile the model for the trainability changes to take effect
         opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_FINETUNE"])
         model.compile(optimizer=opt,
@@ -446,9 +485,12 @@ def main():
     best_epoch_human = best_epoch_index + 1
     best_val_loss = float(combined_val_loss[best_epoch_index])
     
+    # ALWAYS log to local CSV, regardless of W&B status
+    run_id = wandb.run.id if wandb.run is not None else "disabled_or_offline"
+    append_to_model_log(CONFIG, best_epoch_human, best_val_loss, run_id)
     
-    if CONFIG["LOGGING_MODE"] != "disabled":
-        append_to_model_log(CONFIG, best_epoch_human, best_val_loss, wandb.run.id)
+    # ONLY update W&B cloud summaries if W&B is active
+    if CONFIG["LOGGING_MODE"] != "disabled" and wandb.run is not None:
         wandb.run.summary["training_time_minutes"] = round(training_time, 2)
         wandb.run.summary["best_epoch"] = best_epoch_human
         wandb.run.summary["best_val_loss"] = best_val_loss
