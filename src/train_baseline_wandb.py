@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "16_2_attention_block",
-    "DESCRIPTION": "Add another attention block. Run for 200 epochs",
+    "EXPERIMENT_NAME": "17_split_attention",
+    "DESCRIPTION": "1 shared attention block, then 1 per output",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -94,7 +94,7 @@ CONFIG = {
     "USE_ATTENTION_BLOCK": True,
     "ATTN_BOTTLENECK_CHANNELS": 128, 
     "NUM_ATTN_BLOCKS": 2,                   # 0 = No attention, 1 = 1 block, 2 = 2 blocks, etc.
-    "SPLIT_ATTN_AT_BLOCK": None,               # 0 = Split immediately, 1 = 1 shared then split, etc.
+    "SPLIT_ATTN_AT_BLOCK": 1,               # 0 = Split immediately, 1 = 1 shared then split, etc.
     
     # --- Head Flexibility Toggle ---
     "DENSE_UNITS_1": 256,       # 256
