@@ -29,12 +29,13 @@ Done
 - Looks much better. Need more epochs to converge, best val was 2nd last epoch. Will run again on GPU.
 - Huge step in improvement, angle still not converged after 100 epochs. Speed looks like it might be converging. Next run for 200 epochs
 - 200 still converging though leveling out. Trying 500 to be certain.
+- Note: Been freezing by layer number so far, cutting blocks in half! Need to adjust the code to use layer name instead so i can always ensure cutting/freezing non-destructively at block boundaries.
 
 
 
 
 Next
-- cut after block 7 - i think for this i would like to cut blocks 10-17, but freeze blocks 1-6, giving the model space to learn new features, but deleting the deeper stuff in place of the current transformer block. But please you'll need to help me identify the correct layers, or add a layer to block mapping to the code.
+- cut after block 10 - i think for this i would like to cut blocks 10-17, but freeze blocks 1-6, giving the model space to learn new features, but deleting the deeper stuff in place of the current transformer block. But please you'll need to help me identify the correct layers, or add a layer to block mapping to the code.
 - ROI masking - this would allow us to be less agressive in the centre,
  recovering important road signage, while also cutting useless background from the outer edges.
 -Splitting the transformer layers - again, makes perfect sense to decouple the context analyser component for the different objectives. It also makes a bit of sense to combine them because they are not independant, but let's try this first.
