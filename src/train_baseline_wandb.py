@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "15_cut_block_10",
-    "DESCRIPTION": "Cut off at block 10 and freeze 6",
+    "EXPERIMENT_NAME": "16_2_attention_block",
+    "DESCRIPTION": "Add another attention block. Run for 200 epochs",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -77,7 +77,7 @@ CONFIG = {
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_FINETUNE":95,          # Train unfrozen base with low LR
+    "EPOCHS_FINETUNE": 195,          # Train unfrozen base with low LR
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-4, 
     "BATCH_SIZE": 32,
@@ -93,7 +93,7 @@ CONFIG = {
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": True,
     "ATTN_BOTTLENECK_CHANNELS": 128, 
-    "NUM_ATTN_BLOCKS": 1,                   # 0 = No attention, 1 = 1 block, 2 = 2 blocks, etc.
+    "NUM_ATTN_BLOCKS": 2,                   # 0 = No attention, 1 = 1 block, 2 = 2 blocks, etc.
     "SPLIT_ATTN_AT_BLOCK": None,               # 0 = Split immediately, 1 = 1 shared then split, etc.
     
     # --- Head Flexibility Toggle ---
