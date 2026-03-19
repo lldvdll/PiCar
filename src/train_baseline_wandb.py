@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "14_unfreeze_by_block",
-    "DESCRIPTION": "Block instead of layer",
+    "EXPERIMENT_NAME": "15_cut_block_10",
+    "DESCRIPTION": "Cut off at block 10 and freeze 6",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -77,7 +77,7 @@ CONFIG = {
     
     # --- Two-Phase Training Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_FINETUNE":195,          # Train unfrozen base with low LR
+    "EPOCHS_FINETUNE":95,          # Train unfrozen base with low LR
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-4, 
     "BATCH_SIZE": 32,
@@ -87,8 +87,8 @@ CONFIG = {
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
-    "CUT_AT_BLOCK": None,                     # The block number to cut the model at (1 to 16)
-    "FREEZE_UP_TO_BLOCK": 10,                # Freezes blocks 1 through 6 during Phase 2
+    "CUT_AT_BLOCK": 10,                     # The block number to cut the model at (1 to 16)
+    "FREEZE_UP_TO_BLOCK": 8,                # Freezes blocks 1 through 6 during Phase 2
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": True,

@@ -30,7 +30,8 @@ Done
 - Huge step in improvement, angle still not converged after 100 epochs. Speed looks like it might be converging. Next run for 200 epochs
 - 200 still converging though leveling out. Trying 500 to be certain.
 - Note: Been freezing by layer number so far, cutting blocks in half! Need to adjust the code to use layer name instead so i can always ensure cutting/freezing non-destructively at block boundaries.
-
+- Run with correct block based freezing. Slight improvement
+- Now running with cuts - cut at block 10, freeze at block 6. In theory the deeper layers have learned too many specifics which are too detailed for our needs. We keep the trunk of the network, chop off the unnecesary details, and let the attention heads resolve the global spatial relationships.
 
 
 
