@@ -23,13 +23,13 @@ Done
 - Run feature analysis - Grad-CAM for speed and angle independent, and feature maps over layers. Notice network is still learning background cheats. Some clearly following road markings, though inconsistent flip-flip for speed and angle between images. Sometimes not caring enough about both lines.Some clear obstruction detection. Block 7 and beyond features look a bit useless. Cutout augmentation will help with overfitting to specific line arangements. Drop blocks 10>, they are a bit useless and give the attention block less space, but unfreeze 7-10 for learning specific features before attention. ROI pre-processing, e.g. polygon masking, to recover road signs and block out distracting background at image corners.
 - [08] Next - fix augmentation, unfreeze more layers (40), rerun 
 - Check for other weights for mobilenetv2! imagenet might be a bad starting point. Actually the only pretrained option was imagenet...
-- Run planned reduced augmentation (reduce rotation, tilt, and some more bad image removal, blind unfreeze 40 layers). Running now. No improvement, angles worse, weird validation loss spikes at epoch 36 and 46.
-- Image loading was taking 2 mins per epoch! Now caching resized images in epoch 1, then still applying augmentation each epoch. 1 hour quicker for 30 epochs!
-- Added cutout augmentation, randomly mask the training images with black rectangles as a form of regularisation so the model can more consistently learn to map sets of features rather than focusing on specific features.
-- Looks much better. Need more epochs to converge, best val was 2nd last epoch. Will run again on GPU.
-- Huge step in improvement, angle still not converged after 100 epochs. Speed looks like it might be converging. Next run for 200 epochs
-- 200 still converging though leveling out. Trying 500 to be certain.
-- Note: Been freezing by layer number so far, cutting blocks in half! Need to adjust the code to use layer name instead so i can always ensure cutting/freezing non-destructively at block boundaries.
+- [09] Run planned reduced augmentation (reduce rotation, tilt, and some more bad image removal, blind unfreeze 40 layers). Running now. No improvement, angles worse, weird validation loss spikes at epoch 36 and 46.
+- [09] Image loading was taking 2 mins per epoch! Now caching resized images in epoch 1, then still applying augmentation each epoch. 1 hour quicker for 30 epochs!
+- [10] Added cutout augmentation, randomly mask the training images with black rectangles as a form of regularisation so the model can more consistently learn to map sets of features rather than focusing on specific features.
+- [11] Looks much better. Need more epochs to converge, best val was 2nd last epoch. Will run again on GPU.
+- [12] Huge step in improvement, angle still not converged after 100 epochs. Speed looks like it might be converging. Next run for 200 epochs
+- [13] 200 still converging though leveling out. Trying 500 to be certain.
+- [14] Note: Been freezing by layer number so far, cutting blocks in half! Need to adjust the code to use layer name instead so i can always ensure cutting/freezing non-destructively at block boundaries.
 - [15] Run with correct block based freezing. Slight improvement
 - Now running with cuts - cut at block 10, freeze at block 6. In theory the deeper layers have learned too many specifics which are too detailed for our needs. We keep the trunk of the network, chop off the unnecesary details, and let the attention heads resolve the global spatial relationships. Marginally worse. Way faster convergence
 - [16] Next add an extra attention block. Not really any improvement at all.
