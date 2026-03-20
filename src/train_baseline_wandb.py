@@ -42,8 +42,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "25_efficientnetb3",
-    "DESCRIPTION": "Use EfficientNetB3",
+    "EXPERIMENT_NAME": "26_5_epochs_higher_lr",
+    "DESCRIPTION": "5 epochs per unfreeze with a lowerlearning rate decay, higher starting lr",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -82,10 +82,10 @@ CONFIG = {
     
 # --- Progressive Unfreezing Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_PER_UNFREEZE_STEP": 25, # Epochs to train EACH time a new block is unfrozen
+    "EPOCHS_PER_UNFREEZE_STEP": 5, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
-    "LEARNING_RATE_FINETUNE_START": 1e-5, # Starting LR for the first unfrozen block
-    "UNFREEZE_LR_DECAY": 0.8,             # Multiply LR by this amount after every block step
+    "LEARNING_RATE_FINETUNE_START": 5e-5, # Starting LR for the first unfrozen block
+    "UNFREEZE_LR_DECAY": 0.9,             # Multiply LR by this amount after every block step
     "BATCH_SIZE": 16,
     "OPTIMIZER": "adam",
     "LOSS_FUNCTION": "huber",
