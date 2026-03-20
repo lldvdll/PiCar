@@ -35,7 +35,8 @@ Done
 - [16] Next add an extra attention block. Not really any improvement at all.
 - [17] Split the attention blocks now. Slight improvements, but still not hugely better
 - [18] Less agressive alround - layer cut 10>12, cutout prob 05.>0.2, cutout max_pixels 50>30, crop 110,30>100,20
-- [19] Next experiment i should just unfreeze it all, set a graded learning rate, stop chopping the network, and remove the transformer blocks, and see how this does. Unfreeze all, but one block at a time and with decreasing learning rate. Also, removed the cut.
+- [19] Next experiment i should just unfreeze it all, set a graded learning rate, stop chopping the network, and remove the transformer blocks, and see how this does. Unfreeze all, but one block at a time and with decreasing learning rate. Also, removed the cut. Much smoother and more consistent learning curve, though speed flattens out early.
+- [20] Try without attention now
 
 
 Next

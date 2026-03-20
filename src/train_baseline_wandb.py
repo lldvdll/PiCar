@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "19_unfreeze_all",
-    "DESCRIPTION": "Unfreeze all layers, gradual learning rate decay.",
+    "EXPERIMENT_NAME": "20_attention",
+    "DESCRIPTION": "Remove attention layers",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -92,10 +92,10 @@ CONFIG = {
     "FREEZE_UP_TO_BLOCK": 0,                # 0 means eventually unfreeze all blocks (1 down to 1)
     
     # --- Attention Head ---
-    "USE_ATTENTION_BLOCK": True,
+    "USE_ATTENTION_BLOCK": False,
     "ATTN_BOTTLENECK_CHANNELS": 128, 
-    "NUM_ATTN_BLOCKS": 2,                   # 0 = No attention, 1 = 1 block, 2 = 2 blocks, etc.
-    "SPLIT_ATTN_AT_BLOCK": 1,               # 0 = Split immediately, 1 = 1 shared then split, etc.
+    "NUM_ATTN_BLOCKS": 0,                   # 0 = No attention, 1 = 1 block, 2 = 2 blocks, etc.
+    "SPLIT_ATTN_AT_BLOCK": None,               # 0 = Split immediately, 1 = 1 shared then split, etc.
     
     # --- Head Flexibility Toggle ---
     "DENSE_UNITS_1": 256,       # 256
