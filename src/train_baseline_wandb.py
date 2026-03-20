@@ -7,8 +7,7 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.applications import EfficientNetB3
+from tensorflow.keras.applications import MobileNetV2, MobileNetV3Large, MobileNetV3Small, EfficientNetB0, EfficientNetB3
 from tensorflow.keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 
@@ -42,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "26_5_epochs_higher_lr",
-    "DESCRIPTION": "5 epochs per unfreeze with a lowerlearning rate decay, higher starting lr",
+    "EXPERIMENT_NAME": "26_MobileNetV3Large",
+    "DESCRIPTION": "Using MobileNetV3Large",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -84,14 +83,14 @@ CONFIG = {
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
     "EPOCHS_PER_UNFREEZE_STEP": 5, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
-    "LEARNING_RATE_FINETUNE_START": 5e-5, # Starting LR for the first unfrozen block
+    "LEARNING_RATE_FINETUNE_START": 1e-4, # Starting LR for the first unfrozen block
     "UNFREEZE_LR_DECAY": 0.9,             # Multiply LR by this amount after every block step
     "BATCH_SIZE": 16,
     "OPTIMIZER": "adam",
     "LOSS_FUNCTION": "huber",
     
     # --- Model Architecture ---
-    "BASE_MODEL": "EfficientNetB3",
+    "BASE_MODEL": "MobileNetV3Large",
     "BASE_WEIGHTS": "imagenet",
     "CUT_AT_BLOCK": None,                   # Defaults to block 16
     "FREEZE_UP_TO_BLOCK": 0,                # 0 means eventually unfreeze all blocks (1 down to 1)
@@ -376,16 +375,17 @@ def build_initial_model():
     
     print(f"[INFO] Loading {CONFIG['BASE_MODEL']} as feature extractor...")
     
-    # 1. Dynamically load the correct Base Model
+# 1. Dynamically load the correct Base Model
     if CONFIG["BASE_MODEL"] == "MobileNetV2":
-        from tensorflow.keras.applications import MobileNetV2
         full_base_model = MobileNetV2(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
-    elif CONFIG["BASE_MODEL"] == "EfficientNetB3":
-        from tensorflow.keras.applications import EfficientNetB3
-        full_base_model = EfficientNetB3(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
+    elif CONFIG["BASE_MODEL"] == "MobileNetV3Large":
+        full_base_model = MobileNetV3Large(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"], include_preprocessing=True)
     elif CONFIG["BASE_MODEL"] == "MobileNetV3Small":
-        from tensorflow.keras.applications import MobileNetV3Small
-        full_base_model = MobileNetV3Small(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
+        full_base_model = MobileNetV3Small(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"], include_preprocessing=True)
+    elif CONFIG["BASE_MODEL"] == "EfficientNetB0":
+        full_base_model = EfficientNetB0(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
+    elif CONFIG["BASE_MODEL"] == "EfficientNetB3":
+        full_base_model = EfficientNetB3(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
     else:
         raise ValueError(f"Unsupported BASE_MODEL: {CONFIG['BASE_MODEL']}")
 
@@ -640,9 +640,13 @@ def main():
     # ------------------------------------------------------------------------------------
     # PHASE 2: PROGRESSIVE UNFREEZING (Top-Down)
     # ------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------
+    # PHASE 2: PROGRESSIVE UNFREEZING (MobileNetV3)
+    # ------------------------------------------------------------------------------------
+    # MobileNetV3Large has 15 blocks (0 through 14)
     start_block = CONFIG.get("CUT_AT_BLOCK")
     if start_block is None:
-        start_block = 16  # Default to top block of MobileNetV2
+        start_block = 14  
         
     end_block = CONFIG.get("FREEZE_UP_TO_BLOCK", 0)
     
@@ -652,30 +656,49 @@ def main():
     lr_decay = CONFIG["UNFREEZE_LR_DECAY"]
 
     if epochs_per_step > 0:
-        base_model.trainable = True # Set master flag to True so we can selectively freeze
+        base_model.trainable = True 
         
-        # Iterate backwards: e.g., from Block 16 down to Block 1
-        for target_block in range(start_block, end_block, -1):
+        # BEST PRACTICE: The BatchNorm "Backward Lock"
+        # Keeps pre-trained ImageNet statistics safe from exploding gradients
+        for layer in base_model.layers:
+            if isinstance(layer, layers.BatchNormalization):
+                layer.trainable = False
+
+        # Iterate backwards from top block down to 0
+        for target_block in range(start_block, end_block - 1, -1):
             print(f"\n[INFO] --- PHASE 2: UNFREEZING DOWN TO BLOCK {target_block} ---")
             print(f"[INFO] Current Learning Rate: {current_lr:.2e}")
             
-            # 1. Freeze everything BELOW the target_block
-            blocks_to_freeze = [f"block_{i}_" for i in range(1, target_block)]
+            # Dynamically handle layer names for V2 vs V3 safely
+            blocks_to_freeze = []
+            if "MobileNetV3" in CONFIG["BASE_MODEL"]:
+                # Block 0 has no number, so we explicitly target its specific sub-layers
+                if target_block > 0:
+                    blocks_to_freeze.extend(["expanded_conv_depthwise", "expanded_conv_project", "expanded_conv_squeeze"])
+                # Blocks 1+ use a trailing underscore to prevent '1' from matching '10'
+                blocks_to_freeze.extend([f"expanded_conv_{i}_" for i in range(1, target_block)])
+            else:
+                # MobileNetV2 Fallback (Trailing underscore already prevents collisions)
+                blocks_to_freeze.extend([f"block_{i}_" for i in range(1, target_block)])
             
             for layer in base_model.layers:
-                # Always freeze the very first Conv1 stem, and any blocks below our target
-                if layer.name.startswith('Conv1') or any(b in layer.name for b in blocks_to_freeze):
+                if isinstance(layer, layers.BatchNormalization):
+                    continue # Already handled
+                    
+                # Identify the Stem safely (V2 uses 'Conv1...', V3 uses exactly 'Conv')
+                is_stem = (layer.name == 'Conv' or layer.name.startswith('Conv1'))
+                
+                # Freeze if it's the stem, or if it explicitly starts with our safe prefixes
+                if is_stem or any(layer.name.startswith(b) for b in blocks_to_freeze):
                     layer.trainable = False
                 else:
-                    layer.trainable = True  # Explicitly unfreeze the current target and anything above it
+                    layer.trainable = True
                     
-            # 2. Recompile to apply trainability changes and new LR (Added clipnorm for safety!)
             opt = optimizers.Adam(learning_rate=current_lr, clipnorm=1.0)
             model.compile(optimizer=opt,
                           loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
                           metrics={'angle_output': 'mse', 'speed_output': 'mse'})
             
-            # 3. Train for the step duration
             target_epoch = current_epoch + epochs_per_step
             
             history_step = model.fit(
@@ -687,7 +710,6 @@ def main():
             )
             combined_val_loss.extend(history_step.history['val_loss'])
             
-            # 4. Prepare for the next block down
             current_epoch = target_epoch
             current_lr *= lr_decay
 
