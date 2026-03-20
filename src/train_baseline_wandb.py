@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "21_chchchchchanges",
-    "DESCRIPTION": "Fewer epochs per layer, lower base learning rate, fix validation issue, use huber loss, use sqrt of weights for balancing, implement horizontal flip augmentation, remove bottom crop",
+    "EXPERIMENT_NAME": "22_remove_sqrt_in_balance",
+    "DESCRIPTION": "Remove sqrt from the data balancing and revert to full weights",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -319,7 +319,8 @@ def prepare_data_pipelines():
     
     # 2. BALANCE SECOND (and apply sqrt to weights to soften extreme oversampling)
     train_df['sqrt_weight'] = np.sqrt(train_df['sample_weight'])
-    train_df = train_df.sample(n=len(train_df), replace=True, weights='sqrt_weight', random_state=42)
+    train_df['weight'] = train_df['sample_weight']
+    train_df = train_df.sample(n=len(train_df), replace=True, weights='weight', random_state=42)
     
     print(f"[INFO] Train split: {len(train_df)} | Val split: {len(val_df)} (No leakage)")
     

@@ -38,6 +38,10 @@ Done
 - [19] Next experiment i should just unfreeze it all, set a graded learning rate, stop chopping the network, and remove the transformer blocks, and see how this does. Unfreeze all, but one block at a time and with decreasing learning rate. Also, removed the cut. Much smoother and more consistent learning curve, though speed flattens out early. But somehow much worse in kaggle
 - [20] Try without attention now. Validation now deviating from train a lot more in fewer iterations. Maybe the learning rate is too high to start with or something?
 - [21] Fewer epochs per layer, lower base learning rate, fix validation issue, use huber loss, use sqrt of weights for balancing, implement horizontal flip augmentation, remove bottom crop
+- Angle is learning really well, but speed is way worse. Infact it's the validation loss in speed tht's way higher than train and brings the whole score down.
+- [22] Remove sqrt from the debias process. Speed 0 is being undersamples and not learned correctly
+- Might try keeping a few layers frozen. Then also increase number of epochs per layer.
+- Speed loss is bad. I need to figure out what the model 13 did right. Otherwise just create a frankenstein output which combines the best of speed and angle?
 
 
 - After i should try fix validation, use huber loss, and add flip augmentation.
