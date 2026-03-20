@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
 from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications import EfficientNetB3
 from tensorflow.keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 
@@ -372,31 +373,52 @@ def build_initial_model():
                         
     """
     inputs = tf.keras.Input(shape=CONFIG["INPUT_SHAPE"])
-    full_base_model = MobileNetV2(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
     
-    # 2. Cut the network by BLOCK. Safely detect if the block ends in an 'add' or 'project_BN'
-    cut_block = CONFIG.get("CUT_AT_BLOCK", 16)
-    if cut_block is None:
-        cut_block = 16
-        
-    layer_names = [l.name for l in full_base_model.layers]
-    if f"block_{cut_block}_add" in layer_names:
-        cut_layer_name = f"block_{cut_block}_add"
+    print(f"[INFO] Loading {CONFIG['BASE_MODEL']} as feature extractor...")
+    
+    # 1. Dynamically load the correct Base Model
+    if CONFIG["BASE_MODEL"] == "MobileNetV2":
+        from tensorflow.keras.applications import MobileNetV2
+        full_base_model = MobileNetV2(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
+    elif CONFIG["BASE_MODEL"] == "EfficientNetB3":
+        from tensorflow.keras.applications import EfficientNetB3
+        full_base_model = EfficientNetB3(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
+    elif CONFIG["BASE_MODEL"] == "MobileNetV3Small":
+        from tensorflow.keras.applications import MobileNetV3Small
+        full_base_model = MobileNetV3Small(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
     else:
-        cut_layer_name = f"block_{cut_block}_project_BN"
+        raise ValueError(f"Unsupported BASE_MODEL: {CONFIG['BASE_MODEL']}")
+
+    # 2. Handle Model Amputation (if requested)
+    cut_block = CONFIG.get("CUT_AT_BLOCK")
+    
+    if cut_block is None:
+        print(f"[INFO] Using full, uncut {CONFIG['BASE_MODEL']}.")
+        cut_layer_output = full_base_model.output
+        base_name = f"Full_{CONFIG['BASE_MODEL']}"
+    else:
+        layer_names = [l.name for l in full_base_model.layers]
+        # Attempt to find standard MobileNet block endings
+        if f"block_{cut_block}_add" in layer_names:
+            cut_layer_name = f"block_{cut_block}_add"
+        elif f"block_{cut_block}_project_BN" in layer_names:
+            cut_layer_name = f"block_{cut_block}_project_BN"
+        else:
+            raise ValueError(f"Could not find cut point for block {cut_block} in {CONFIG['BASE_MODEL']}. Ensure you use CUT_AT_BLOCK=None for this architecture.")
         
-    print(f"[INFO] Slicing MobileNetV2 at Block {cut_block} (Layer: {cut_layer_name})")
-    
-    cut_layer_output = full_base_model.get_layer(cut_layer_name).output
-    base_model = models.Model(inputs=full_base_model.input, outputs=cut_layer_output, name="Amputated_MobileNetV2")
-    
+        print(f"[INFO] Slicing {CONFIG['BASE_MODEL']} at Block {cut_block} (Layer: {cut_layer_name})")
+        cut_layer_output = full_base_model.get_layer(cut_layer_name).output
+        base_name = f"Amputated_{CONFIG['BASE_MODEL']}"
+
+    base_model = models.Model(inputs=full_base_model.input, outputs=cut_layer_output, name=base_name)
     base_model.trainable = False 
-    x = base_model(inputs, training=False)
+    
+    # IMPORTANT: training=False forces BatchNorm layers to stay in inference mode 
+    # even when we unfreeze the base_model later.
+    x = base_model(inputs, training=False) 
     
     # --- DYNAMIC ATTENTION BLOCK LOGIC ---
     num_attn = CONFIG.get("NUM_ATTN_BLOCKS", 0)
-    
-    # Safely handle None by defaulting to num_attn (no split)
     split_val = CONFIG.get("SPLIT_ATTN_AT_BLOCK")
     if split_val is None:
         split_val = num_attn
@@ -404,7 +426,7 @@ def build_initial_model():
     split_at = min(split_val, num_attn) 
     remaining_blocks = num_attn - split_at
 
-    # Add shared attention blocks (before the split)
+    # Add shared attention blocks
     for i in range(split_at):
         reduced = layers.Conv2D(CONFIG["ATTN_BOTTLENECK_CHANNELS"], kernel_size=1, activation="relu", name=f"shared_bot_{i}")(x)
         attn_map = layers.Conv2D(1, kernel_size=1, activation="sigmoid", name=f"shared_map_{i}")(reduced)
@@ -420,7 +442,7 @@ def build_initial_model():
     x_angle = layers.GlobalAveragePooling2D(name="angle_gap")(x_angle)
     x_angle = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x_angle)
     x_angle = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_angle)
-    if CONFIG["DENSE_UNITS_2"] is not None:
+    if CONFIG.get("DENSE_UNITS_2") is not None:
         x_angle = layers.Dense(CONFIG["DENSE_UNITS_2"], activation=CONFIG["ACTIVATION_HIDDEN"])(x_angle)
         x_angle = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_angle)
     angle_out = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='angle_output')(x_angle)
@@ -435,13 +457,14 @@ def build_initial_model():
     x_speed = layers.GlobalAveragePooling2D(name="speed_gap")(x_speed)
     x_speed = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x_speed)
     x_speed = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_speed)
-    if CONFIG["DENSE_UNITS_2"] is not None:
+    if CONFIG.get("DENSE_UNITS_2") is not None:
         x_speed = layers.Dense(CONFIG["DENSE_UNITS_2"], activation=CONFIG["ACTIVATION_HIDDEN"])(x_speed)
         x_speed = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_speed)
     speed_out = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='speed_output')(x_speed)
     # -----------------------------------
 
     model = models.Model(inputs=inputs, outputs=[angle_out, speed_out])
+    
     opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_WARMUP"], clipnorm=1.0)
     model.compile(optimizer=opt,
                 loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
