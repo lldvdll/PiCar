@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "22_remove_sqrt_in_balance",
-    "DESCRIPTION": "Remove sqrt from the data balancing and revert to full weights",
+    "EXPERIMENT_NAME": "23_more_epochs_per_unfreeze",
+    "DESCRIPTION": "20 epochs per layer, keep last 6 frozen. Also added some things like prediction file generation at the end.",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -52,6 +52,10 @@ CONFIG = {
     "TEST_IMG_DIR": os.path.join("data", "test_data", "test_data"),
     "SUBMISSION_TEMPLATE": os.path.join("data", "sample_submission.csv"),
     "BAD_IMG_CSV": os.path.join("data", "bad_images.csv"),
+    "CORRECTIONS_CSV": "data/training_data/corrections.csv",
+    
+    # --- Data & Submission Settings ---
+    "SNAP_SUBMISSION": "angle",  # Options: "angle", "speed", "both", or "None" 
     
     # --- Image Preprocessing ---
     "IMG_WIDTH_TARGET": 160,  
@@ -77,7 +81,7 @@ CONFIG = {
     
 # --- Progressive Unfreezing Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_PER_UNFREEZE_STEP": 12, # Epochs to train EACH time a new block is unfrozen
+    "EPOCHS_PER_UNFREEZE_STEP": 20, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE_START": 0.5e-5, # Starting LR for the first unfrozen block
     "UNFREEZE_LR_DECAY": 0.8,             # Multiply LR by this amount after every block step
@@ -89,7 +93,7 @@ CONFIG = {
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
     "CUT_AT_BLOCK": None,                   # Defaults to block 16
-    "FREEZE_UP_TO_BLOCK": 0,                # 0 means eventually unfreeze all blocks (1 down to 1)
+    "FREEZE_UP_TO_BLOCK": 6,                # 0 means eventually unfreeze all blocks (1 down to 1)
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": False,
@@ -304,15 +308,33 @@ def prepare_data_pipelines():
         Set batch size
         Return training and valudation sets
     """
+    print("[INFO] Loading and preparing data...")
     df = pd.read_csv(CONFIG["TRAIN_CSV"])
     
-    # Drop flagged images
+    # 1. APPLY CORRECTIONS FIRST
+    if os.path.exists(CONFIG.get("CORRECTIONS_CSV", "")):
+        print("[INFO] Applying label corrections...")
+        corr_df = pd.read_csv(CONFIG["CORRECTIONS_CSV"])
+        # Extract numeric ID from '123.png'
+        corr_df['image_id'] = corr_df['filename'].str.replace('.png', '', regex=False).astype(float).astype(int)
+        
+        df = df.set_index('image_id')
+        corr_df = corr_df.set_index('image_id')
+        df.update(corr_df[['angle', 'speed']]) # Overwrites old labels with corrected ones
+        df = df.reset_index()
+
+    # 2. IDENTIFY AND REMOVE BAD IMAGES
     bad_df = pd.read_csv(CONFIG["BAD_IMG_CSV"])
     bad_list = bad_df['filename'].astype(str).tolist()
+    
+    # Create check_name safely
     df['check_name'] = df['image_id'].astype(float).astype(int).astype(str) + '.png'
-    initial_count = len(df)
-    df = df[~df['check_name'].isin(bad_list)].drop(columns=['check_name'])
-    print(f"[INFO] Dropped {initial_count - len(df)} manually flagged bad images.")
+    
+    # Filter them out
+    clean_df = df[~df['check_name'].isin(bad_list)].copy()
+    print(f"[INFO] Removed {len(df) - len(clean_df)} bad images. Clean dataset size: {len(clean_df)}")
+    
+    df = clean_df.drop(columns=['check_name'])
     
     # 1. SPLIT FIRST to guarantee a pure, unseen validation set
     train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -436,6 +458,121 @@ class WandbLRCustomLogger(tf.keras.callbacks.Callback):
             lr = float(tf.keras.backend.get_value(self.model.optimizer.learning_rate))
             wandb.log({"learning_rate": lr}, commit=False)
 
+def generate_comprehensive_predictions(model, CONFIG, exp_dir):
+    print("\n[INFO] Generating comprehensive predictions file (This will take a few minutes for accurate latency tracking)...")
+    import time
+    
+    train_base = pd.read_csv(CONFIG["TRAIN_CSV"])
+    test_base = pd.read_csv(CONFIG["SUBMISSION_TEMPLATE"])
+    
+    # Re-apply corrections to match training logic
+    if os.path.exists(CONFIG.get("CORRECTIONS_CSV", "")):
+        corr_df = pd.read_csv(CONFIG["CORRECTIONS_CSV"])
+        corr_df['image_id'] = corr_df['filename'].str.replace('.png', '', regex=False).astype(float).astype(int)
+        train_base = train_base.set_index('image_id')
+        corr_df = corr_df.set_index('image_id')
+        train_base.update(corr_df[['angle', 'speed']])
+        train_base = train_base.reset_index()
+        
+    bad_df = pd.read_csv(CONFIG["BAD_IMG_CSV"])
+    bad_list = bad_df['filename'].astype(str).tolist()
+    
+    # Tag splits
+    train_base['check_name'] = train_base['image_id'].astype(float).astype(int).astype(str) + '.png'
+    train_base['split'] = 'unknown'
+    train_base.loc[train_base['check_name'].isin(bad_list), 'split'] = 'excluded'
+    
+    clean_train = train_base[train_base['split'] != 'excluded'].copy()
+    
+    # Re-calculate Joint Distribution Weights to log them
+    clean_train['angle_bin'] = pd.cut(clean_train['angle'], bins=10, labels=False)
+    clean_train['speed_bin'] = pd.cut(clean_train['speed'], bins=2, labels=False)
+    joint_counts = clean_train.groupby(['angle_bin', 'speed_bin']).size()
+    total_samples = len(clean_train)
+    
+    def get_weight(row):
+        count = joint_counts.get((row['angle_bin'], row['speed_bin']), 1)
+        return total_samples / (len(joint_counts) * count)
+        
+    clean_train['weight'] = clean_train.apply(get_weight, axis=1)
+    
+    # Recreate the exact train/val split to tag them
+    t_df, v_df = train_test_split(clean_train, test_size=0.2, random_state=42)
+    train_base.loc[train_base['image_id'].isin(t_df['image_id']), 'split'] = 'train'
+    train_base.loc[train_base['image_id'].isin(v_df['image_id']), 'split'] = 'val'
+    
+    # Map weights back to the base frame
+    weight_map = dict(zip(clean_train['image_id'], clean_train['weight']))
+    train_base['weight'] = train_base['image_id'].map(weight_map)
+    
+    results = []
+    huber = tf.keras.losses.Huber()
+    mse = tf.keras.losses.MeanSquaredError()
+    
+    def process_df(df, default_split):
+        for idx, row in df.iterrows():
+            # Safely resolve path whether it's the train or test dataframe
+            if 'filepath' in row and pd.notna(row['filepath']):
+                img_path = row['filepath']
+            else:
+                filename = str(int(float(row['image_id']))) + '.png'
+                img_path = os.path.join(CONFIG["TEST_IMG_DIR"], filename)
+                
+            if not os.path.exists(img_path): continue
+            
+            # Preprocess (No augmentations)
+            img_raw = tf.io.read_file(img_path)
+            img = tf.image.decode_png(img_raw, channels=3)
+            img = tf.cast(img, tf.float32) / 255.0
+            
+            top = CONFIG.get("CROP_TOP_PIXELS", 0)
+            bottom_crop = CONFIG.get("CROP_BOTTOM_PIXELS", 0)
+            bottom = -bottom_crop if bottom_crop > 0 else None
+            img = img[top:bottom, :, :]
+            img = tf.image.resize(img, [CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"]])
+            img_tensor = tf.expand_dims(img, 0)
+            
+            # Simulate real-time hardware inference
+            start = time.time()
+            preds = model.predict(img_tensor, verbose=0)
+            inf_time = time.time() - start
+            
+            p_angle, p_speed = float(preds[0][0][0]), float(preds[1][0][0])
+            s_angle = round(p_angle * 15.0) / 15.0
+            s_speed = 1.0 if p_speed > 0.5 else 0.0
+            
+            split_tag = row.get('split', default_split)
+            true_a = row.get('angle', np.nan)
+            true_s = row.get('speed', np.nan)
+            
+            results.append({
+                'image_id': row['image_id'],
+                'split': split_tag,
+                'excluded': split_tag == 'excluded',
+                'weight': row.get('weight', np.nan),
+                'inference_time_sec': inf_time,
+                'true_angle': true_a,
+                'true_speed': true_s,
+                'pred_angle': p_angle,
+                'pred_speed': p_speed,
+                'pred_angle_snapped': s_angle,
+                'pred_speed_snapped': s_speed,
+                'huber_loss_angle': float(huber(true_a, p_angle)) if not np.isnan(true_a) else np.nan,
+                'huber_loss_speed': float(huber(true_s, p_speed)) if not np.isnan(true_s) else np.nan,
+                'mse_loss_angle': float(mse(true_a, p_angle)) if not np.isnan(true_a) else np.nan,
+                'mse_loss_speed': float(mse(true_s, p_speed)) if not np.isnan(true_s) else np.nan,
+            })
+            
+    print("  Processing training/validation data...")
+    process_df(train_base, 'train')
+    print("  Processing test data...")
+    process_df(test_base, 'test')
+    
+    res_df = pd.DataFrame(results)
+    res_path = os.path.join(exp_dir, "comprehensive_predictions.csv")
+    res_df.to_csv(res_path, index=False)
+    print(f"[INFO] Master Prediction File saved to: {res_path}")
+
 # --- 4. MAIN ORCHESTRATOR ---
 def main():
     print(f"\n========== STARTING EXPERIMENT: {CONFIG['EXPERIMENT_NAME']} ==========")
@@ -558,15 +695,34 @@ def main():
     test_ds = test_ds.map(read_and_decode_image, num_parallel_calls=tf.data.AUTOTUNE).batch(CONFIG["BATCH_SIZE"])
     
     predictions = best_model.predict(test_ds)
-    sub_df['angle'] = predictions[0].flatten()
-    sub_df['speed'] = predictions[1].flatten()
     
-    submission_file = os.path.join(exp_dir, "submission.csv")
-    sub_df.to_csv(submission_file, index=False)
-    wandb.finish()
+    submission_df = pd.DataFrame({
+        'image_id': sub_df['image_id'],
+        'angle': predictions[0].flatten(),
+        'speed': predictions[1].flatten()
+    })
     
-    print(f"[INFO] Submission saved to {submission_file}")
-    print("======================================================================\n")
+    # Apply conditional snapping based on CONFIG
+    snap_mode = CONFIG.get("SNAP_SUBMISSION", "None")
+    print(f"[INFO] Applying Submission Snapping: {snap_mode}")
+    
+    if snap_mode in ["angle", "both"]:
+        submission_df['angle'] = np.round(submission_df['angle'] * 15.0) / 15.0
+    if snap_mode in ["speed", "both"]:
+        submission_df['speed'] = np.where(submission_df['speed'] > 0.5, 1.0, 0.0)
+        
+    submission_path = os.path.join(exp_dir, "submission.csv")
+    submission_df.to_csv(submission_path, index=False)
+    print(f"[INFO] Submission saved to {submission_path}")
 
+    # --- NEW: Generate Master Prediction Logger ---
+    generate_comprehensive_predictions(best_model, CONFIG, exp_dir)    
+    
+    # Finish wandb run
+    if CONFIG["LOGGING_MODE"] != "disabled" and wandb.run is not None:
+        wandb.finish()
+    
+    print("======================================================================\n")
+    
 if __name__ == "__main__":
     main()

@@ -41,7 +41,13 @@ Done
 - Angle is learning really well, but speed is way worse. Infact it's the validation loss in speed tht's way higher than train and brings the whole score down.
 - [22] Remove sqrt from the debias process. Speed 0 is being undersamples and not learned correctly
 - Might try keeping a few layers frozen. Then also increase number of epochs per layer.
-- Speed loss is bad. I need to figure out what the model 13 did right. Otherwise just create a frankenstein output which combines the best of speed and angle?
+- Speed loss is bad. I need to figure out what the model 13 did right. Otherwise just create a frankenstein output which combines the best of speed and angle? 
+- Need complete analysis of speed errors - add speed/turning options to compreensive analysis. Also regenerate the joint distribution plot but plot average error
+- So much bad data! Removed hundreds of junk files and made hundreds of speed and angle corrections. I notice the current model understeers on bends. Then realised the bad data is also in the test dataset!
+- [23] 20 epochs per layer, keep last 6 frozen. Also added some things like prediction file generation at the end.
+
+
+- Consider changing speed to binary output and relevance of huber loss. Also consider snapping/binning angle
 
 
 - After i should try fix validation, use huber loss, and add flip augmentation.
