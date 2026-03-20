@@ -30,8 +30,8 @@ Done
 - [12] Huge step in improvement, angle still not converged after 100 epochs. Speed looks like it might be converging. Next run for 200 epochs
 - [13] 200 still converging though leveling out. Trying 500 to be certain.
 - [14] Note: Been freezing by layer number so far, cutting blocks in half! Need to adjust the code to use layer name instead so i can always ensure cutting/freezing non-destructively at block boundaries.
-- [15] Run with correct block based freezing. Slight improvement
-- Now running with cuts - cut at block 10, freeze at block 6. In theory the deeper layers have learned too many specifics which are too detailed for our needs. We keep the trunk of the network, chop off the unnecesary details, and let the attention heads resolve the global spatial relationships. Marginally worse. Way faster convergence
+- Run with correct block based freezing. Slight improvement
+- [15] Now running with cuts - cut at block 10, freeze at block 6. In theory the deeper layers have learned too many specifics which are too detailed for our needs. We keep the trunk of the network, chop off the unnecesary details, and let the attention heads resolve the global spatial relationships. Marginally worse. Way faster convergence
 - [16] Next add an extra attention block. Not really any improvement at all.
 - [17] Split the attention blocks now. Slight improvements, but still not hugely better
 - [18] Less agressive alround - layer cut 10>12, cutout prob 05.>0.2, cutout max_pixels 50>30, crop 110,30>100,20
@@ -45,6 +45,7 @@ Done
 - Need complete analysis of speed errors - add speed/turning options to compreensive analysis. Also regenerate the joint distribution plot but plot average error
 - So much bad data! Removed hundreds of junk files and made hundreds of speed and angle corrections. I notice the current model understeers on bends. Then realised the bad data is also in the test dataset!
 - [23] 20 epochs per layer, keep last 6 frozen. Also added some things like prediction file generation at the end.
+- [24] use larger images. also crop the bottom out again, the wheels don't always match the angle
 
 
 - Consider changing speed to binary output and relevance of huber loss. Also consider snapping/binning angle

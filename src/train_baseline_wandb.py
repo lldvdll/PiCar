@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "23_more_epochs_per_unfreeze",
-    "DESCRIPTION": "20 epochs per layer, keep last 6 frozen. Also added some things like prediction file generation at the end.",
+    "EXPERIMENT_NAME": "24_larger_image_crop_wheels",
+    "DESCRIPTION": "Use 224x224 image but also crop the wheels out.",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -58,10 +58,10 @@ CONFIG = {
     "SNAP_SUBMISSION": "angle",  # Options: "angle", "speed", "both", or "None" 
     
     # --- Image Preprocessing ---
-    "IMG_WIDTH_TARGET": 160,  
-    "IMG_HEIGHT_TARGET": 96,
+    "IMG_WIDTH_TARGET": 224,  
+    "IMG_HEIGHT_TARGET": 224,
     "CROP_TOP_PIXELS": 100, 
-    "CROP_BOTTOM_PIXELS": 0, 
+    "CROP_BOTTOM_PIXELS": 30, 
     "CHANNELS": 3,
     
 # --- Data Augmentation ---
