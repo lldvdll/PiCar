@@ -57,7 +57,7 @@ CONFIG = {
     "IMG_WIDTH_TARGET": 160,  
     "IMG_HEIGHT_TARGET": 96,
     "CROP_TOP_PIXELS": 100, 
-    "CROP_BOTTOM_PIXELS": 20, 
+    "CROP_BOTTOM_PIXELS": 0, 
     "CHANNELS": 3,
     
 # --- Data Augmentation ---
@@ -77,13 +77,13 @@ CONFIG = {
     
 # --- Progressive Unfreezing Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_PER_UNFREEZE_STEP": 15, # Epochs to train EACH time a new block is unfrozen
+    "EPOCHS_PER_UNFREEZE_STEP": 12, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
-    "LEARNING_RATE_FINETUNE_START": 1e-4, # Starting LR for the first unfrozen block
+    "LEARNING_RATE_FINETUNE_START": 0.5e-5, # Starting LR for the first unfrozen block
     "UNFREEZE_LR_DECAY": 0.8,             # Multiply LR by this amount after every block step
     "BATCH_SIZE": 32,
     "OPTIMIZER": "adam",
-    "LOSS_FUNCTION": "mse",
+    "LOSS_FUNCTION": "huber",
     
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
@@ -266,6 +266,25 @@ def apply_augmentations(img, labels):
     """
     if CONFIG.get("AUG_USE_AUGMENTATION", False):
         img = augment_image(img)
+        
+        # --- GRAPH-SAFE MIRRORED HORIZONTAL FLIP ---
+        # Generate a single boolean tensor for the condition
+        flip_cond = tf.random.uniform([]) < 0.5
+        
+        # Use tf.cond to safely branch the image manipulation
+        img = tf.cond(flip_cond, lambda: tf.image.flip_left_right(img), lambda: img)
+        
+        # Use tf.cond to safely branch the label inversion
+        new_angle = tf.cond(flip_cond, 
+                            lambda: 1.0 - labels['angle_output'], 
+                            lambda: labels['angle_output'])
+        
+        # Reconstruct the dictionary safely
+        labels = {
+            'angle_output': new_angle,
+            'speed_output': labels['speed_output']
+        }
+            
         img = random_cutout(
             img, 
             probability=CONFIG["AUG_CUTOUT_PROB"], 
@@ -295,11 +314,14 @@ def prepare_data_pipelines():
     df = df[~df['check_name'].isin(bad_list)].drop(columns=['check_name'])
     print(f"[INFO] Dropped {initial_count - len(df)} manually flagged bad images.")
     
-    # Balance dataset according to label join distribution
-    balanced_df = df.sample(n=len(df), replace=True, weights='sample_weight', random_state=42)
+    # 1. SPLIT FIRST to guarantee a pure, unseen validation set
+    train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
     
-    # Split the fully balanced dataset
-    train_df, val_df = train_test_split(balanced_df, test_size=0.2, random_state=42)
+    # 2. BALANCE SECOND (and apply sqrt to weights to soften extreme oversampling)
+    train_df['sqrt_weight'] = np.sqrt(train_df['sample_weight'])
+    train_df = train_df.sample(n=len(train_df), replace=True, weights='sqrt_weight', random_state=42)
+    
+    print(f"[INFO] Train split: {len(train_df)} | Val split: {len(val_df)} (No leakage)")
     
     def create_ds(dataframe, is_training):
         paths = dataframe['filepath'].values
@@ -399,8 +421,8 @@ def build_initial_model():
     model = models.Model(inputs=inputs, outputs=[angle_out, speed_out])
     opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_WARMUP"], clipnorm=1.0)
     model.compile(optimizer=opt,
-                  loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
-                  metrics={'angle_output': 'mae', 'speed_output': 'mae'})
+                loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
+                metrics={'angle_output': 'mse', 'speed_output': 'mse'}) 
                   
     return model, base_model
 
@@ -490,7 +512,7 @@ def main():
             opt = optimizers.Adam(learning_rate=current_lr, clipnorm=1.0)
             model.compile(optimizer=opt,
                           loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
-                          metrics={'angle_output': 'mae', 'speed_output': 'mae'})
+                          metrics={'angle_output': 'mse', 'speed_output': 'mse'})
             
             # 3. Train for the step duration
             target_epoch = current_epoch + epochs_per_step

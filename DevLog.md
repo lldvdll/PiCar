@@ -35,8 +35,19 @@ Done
 - [16] Next add an extra attention block. Not really any improvement at all.
 - [17] Split the attention blocks now. Slight improvements, but still not hugely better
 - [18] Less agressive alround - layer cut 10>12, cutout prob 05.>0.2, cutout max_pixels 50>30, crop 110,30>100,20
-- [19] Next experiment i should just unfreeze it all, set a graded learning rate, stop chopping the network, and remove the transformer blocks, and see how this does. Unfreeze all, but one block at a time and with decreasing learning rate. Also, removed the cut. Much smoother and more consistent learning curve, though speed flattens out early.
-- [20] Try without attention now
+- [19] Next experiment i should just unfreeze it all, set a graded learning rate, stop chopping the network, and remove the transformer blocks, and see how this does. Unfreeze all, but one block at a time and with decreasing learning rate. Also, removed the cut. Much smoother and more consistent learning curve, though speed flattens out early. But somehow much worse in kaggle
+- [20] Try without attention now. Validation now deviating from train a lot more in fewer iterations. Maybe the learning rate is too high to start with or something?
+- [21] Fewer epochs per layer, lower base learning rate, fix validation issue, use huber loss, use sqrt of weights for balancing, implement horizontal flip augmentation, remove bottom crop
+
+
+- After i should try fix validation, use huber loss, and add flip augmentation.
+- Then i should make everything more agressive again?
+- Actually i notice the current models do worse on speed. Most likely kaggle score is worse because speed gets a huge penalty if incorrect. So need to step back to that state if possible. Looks like the switch may have been the introduction of attention? Yep, looks like attention was breaking the speed scores.
+- Are wheels a big angle predictor? Should we add them back in for kaggle and then remove them again for the live car?
+- I should also snap the angles, even if i leave the speed as is.
+- Also, need to recalculate the sample weights. And probably set the balancing to sqrt of the weight because those rare images will be getting heavily oversampled. May also consider only balancing the speed 1 data, since speed 0 is sparse?
+- need to encorporate label corrections into data pipeline. I see some spurious values
+- important arrows are definitely getting cropped.
 
 
 Next
