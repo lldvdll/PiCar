@@ -45,7 +45,8 @@ Done
 - Need complete analysis of speed errors - add speed/turning options to compreensive analysis. Also regenerate the joint distribution plot but plot average error
 - So much bad data! Removed hundreds of junk files and made hundreds of speed and angle corrections. I notice the current model understeers on bends. Then realised the bad data is also in the test dataset!
 - [23] 20 epochs per layer, keep last 6 frozen. Also added some things like prediction file generation at the end.
-- [24] use larger images. also crop the bottom out again, the wheels don't always match the angle
+- [24] use larger images. also crop the bottom out again, the wheels don't always match the angle. Definite improvement, but not significant
+- [25] efficientnetb3
 
 
 - Consider changing speed to binary output and relevance of huber loss. Also consider snapping/binning angle

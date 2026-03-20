@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "24_larger_image_crop_wheels",
-    "DESCRIPTION": "Use 224x224 image but also crop the wheels out.",
+    "EXPERIMENT_NAME": "25_efficientnetb3",
+    "DESCRIPTION": "Use EfficientNetB3",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -81,19 +81,19 @@ CONFIG = {
     
 # --- Progressive Unfreezing Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_PER_UNFREEZE_STEP": 20, # Epochs to train EACH time a new block is unfrozen
+    "EPOCHS_PER_UNFREEZE_STEP": 25, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
-    "LEARNING_RATE_FINETUNE_START": 0.5e-5, # Starting LR for the first unfrozen block
+    "LEARNING_RATE_FINETUNE_START": 1e-5, # Starting LR for the first unfrozen block
     "UNFREEZE_LR_DECAY": 0.8,             # Multiply LR by this amount after every block step
-    "BATCH_SIZE": 32,
+    "BATCH_SIZE": 16,
     "OPTIMIZER": "adam",
     "LOSS_FUNCTION": "huber",
     
     # --- Model Architecture ---
-    "BASE_MODEL": "MobileNetV2",
+    "BASE_MODEL": "EfficientNetB3",
     "BASE_WEIGHTS": "imagenet",
     "CUT_AT_BLOCK": None,                   # Defaults to block 16
-    "FREEZE_UP_TO_BLOCK": 6,                # 0 means eventually unfreeze all blocks (1 down to 1)
+    "FREEZE_UP_TO_BLOCK": 0,                # 0 means eventually unfreeze all blocks (1 down to 1)
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": False,
@@ -557,10 +557,10 @@ def generate_comprehensive_predictions(model, CONFIG, exp_dir):
                 'pred_speed': p_speed,
                 'pred_angle_snapped': s_angle,
                 'pred_speed_snapped': s_speed,
-                'huber_loss_angle': float(huber(true_a, p_angle)) if not np.isnan(true_a) else np.nan,
-                'huber_loss_speed': float(huber(true_s, p_speed)) if not np.isnan(true_s) else np.nan,
-                'mse_loss_angle': float(mse(true_a, p_angle)) if not np.isnan(true_a) else np.nan,
-                'mse_loss_speed': float(mse(true_s, p_speed)) if not np.isnan(true_s) else np.nan,
+                'huber_loss_angle': float(huber([true_a], [p_angle])) if not np.isnan(true_a) else np.nan,
+                'huber_loss_speed': float(huber([true_s], [p_speed])) if not np.isnan(true_s) else np.nan,
+                'mse_loss_angle': float(mse([true_a], [p_angle])) if not np.isnan(true_a) else np.nan,
+                'mse_loss_speed': float(mse([true_s], [p_speed])) if not np.isnan(true_s) else np.nan,
             })
             
     print("  Processing training/validation data...")
