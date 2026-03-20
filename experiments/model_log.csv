@@ -22,3 +22,4 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
 2026-03-19 21:08:53,17_split_attention,6u6dcxw0,197,0.00865,"1 shared attention block, then 1 per output"
 2026-03-20 00:21:07,19_unfreeze_all,cu5s0wr9,237,0.00753,"Unfreeze all layers, gradual learning rate decay."
 2026-03-20 01:51:47,20_attention,vfy1984v,94,0.00841,Remove attention layers
+2026-03-20 03:20:03,21_chchchchchanges,sdnz9mz7,148,0.01678,"Fewer epochs per layer, lower base learning rate, fix validation issue, use huber loss, use sqrt of weights for balancing, implement horizontal flip augmentation, remove bottom crop"
