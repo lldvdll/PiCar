@@ -20,3 +20,4 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
 2026-03-19 19:03:36,15_cut_block_10,9rzpc148,78,0.01149,Cut off at block 10 and freeze 6
 2026-03-19 19:59:00,16_2_attention_block,femf7na5,185,0.00881,Add another attention block. Run for 200 epochs
 2026-03-19 21:08:53,17_split_attention,6u6dcxw0,197,0.00865,"1 shared attention block, then 1 per output"
+2026-03-20 00:21:07,19_unfreeze_all,cu5s0wr9,237,0.00753,"Unfreeze all layers, gradual learning rate decay."
