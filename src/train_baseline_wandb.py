@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "20_attention",
-    "DESCRIPTION": "Remove attention layers",
+    "EXPERIMENT_NAME": "21_chchchchchanges",
+    "DESCRIPTION": "Fewer epochs per layer, lower base learning rate, fix validation issue, use huber loss, use sqrt of weights for balancing, implement horizontal flip augmentation, remove bottom crop",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
