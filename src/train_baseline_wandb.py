@@ -81,11 +81,11 @@ CONFIG = {
     
 # --- Progressive Unfreezing Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_PER_UNFREEZE_STEP": 5, # Epochs to train EACH time a new block is unfrozen
+    "EPOCHS_PER_UNFREEZE_STEP": 15, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE_START": 1e-5, # Starting LR for the first unfrozen block
     "UNFREEZE_LR_DECAY": 0.9,             # Multiply LR by this amount after every block step
-    "BATCH_SIZE": 16,
+    "BATCH_SIZE": 32,
     "OPTIMIZER": "adam",
     "LOSS_FUNCTION": "huber",
     
@@ -93,7 +93,7 @@ CONFIG = {
     "BASE_MODEL": "MobileNetV3Large",
     "BASE_WEIGHTS": "imagenet",
     "CUT_AT_BLOCK": None,                   # Defaults to block 16
-    "FREEZE_UP_TO_BLOCK": 0,                # 0 means eventually unfreeze all blocks (1 down to 1)
+    "FREEZE_UP_TO_BLOCK": 10,                # 0 means eventually unfreeze all blocks (1 down to 1)
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": False,

@@ -47,7 +47,9 @@ pip install -r PiCar/requirements.txt
 
 - check gpu status ```nvidia-smi```
 - pull latest code ```git pull```
+- run conda ```source ~/.bashrc```
 - activate environment ```conda activate pi_car```
 - install requirements ```pip install -r PiCar/requirements.txt```
+- run ```python src/train_baseline_wandb.py```
 - 
 - 

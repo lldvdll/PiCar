@@ -32,7 +32,7 @@ from sklearn.model_selection import train_test_split
 #  CONSTANTS  - edit these instead of using command-line args
 # ===============================================================
 
-EXPERIMENT  = "20_attention"   # Experiment folder name inside experiments/
+EXPERIMENT  = "22_remove_sqrt_in_balance"   # Experiment folder name inside experiments/
 
 # Sorting / filtering mode for the worst-predictions list.
 # Options:
