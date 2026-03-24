@@ -694,10 +694,10 @@ def main():
                 else:
                     layer.trainable = True
                     
-            # PREVENT OPTIMIZER SHOCK: Do not create a new Adam instance!
-            # Re-use the existing one to preserve the head's momentum history.
-            model.optimizer.learning_rate.assign(current_lr)
-            model.compile(optimizer=model.optimizer,
+            # We MUST create a new optimizer because the number of trainable variables changed.
+            # Because the LR is safely at 1e-5, the head will not experience shock!
+            opt = optimizers.Adam(learning_rate=current_lr, clipnorm=1.0)
+            model.compile(optimizer=opt,
                           loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
                           metrics={'angle_output': 'mse', 'speed_output': 'mse'})
             
