@@ -83,7 +83,7 @@ CONFIG = {
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
     "EPOCHS_PER_UNFREEZE_STEP": 5, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
-    "LEARNING_RATE_FINETUNE_START": 1e-4, # Starting LR for the first unfrozen block
+    "LEARNING_RATE_FINETUNE_START": 1e-5, # Starting LR for the first unfrozen block
     "UNFREEZE_LR_DECAY": 0.9,             # Multiply LR by this amount after every block step
     "BATCH_SIZE": 16,
     "OPTIMIZER": "adam",
@@ -661,8 +661,12 @@ def main():
         # BEST PRACTICE: The BatchNorm "Backward Lock"
         # Keeps pre-trained ImageNet statistics safe from exploding gradients
         for layer in base_model.layers:
-            if isinstance(layer, layers.BatchNormalization):
+            if isinstance(layer, tf.keras.layers.BatchNormalization):
+                layer.trainable = False   # always keep BN frozen
+            elif layer.name.startswith('Conv1') or any(b in layer.name for b in blocks_to_freeze):
                 layer.trainable = False
+            else:
+                layer.trainable = True
 
         # Iterate backwards from top block down to 0
         for target_block in range(start_block, end_block - 1, -1):
@@ -694,8 +698,10 @@ def main():
                 else:
                     layer.trainable = True
                     
-            opt = optimizers.Adam(learning_rate=current_lr, clipnorm=1.0)
-            model.compile(optimizer=opt,
+            # PREVENT OPTIMIZER SHOCK: Do not create a new Adam instance!
+            # Re-use the existing one to preserve the head's momentum history.
+            model.optimizer.learning_rate.assign(current_lr)
+            model.compile(optimizer=model.optimizer,
                           loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': CONFIG["LOSS_FUNCTION"]},
                           metrics={'angle_output': 'mse', 'speed_output': 'mse'})
             
