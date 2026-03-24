@@ -663,10 +663,6 @@ def main():
         for layer in base_model.layers:
             if isinstance(layer, tf.keras.layers.BatchNormalization):
                 layer.trainable = False   # always keep BN frozen
-            elif layer.name.startswith('Conv1') or any(b in layer.name for b in blocks_to_freeze):
-                layer.trainable = False
-            else:
-                layer.trainable = True
 
         # Iterate backwards from top block down to 0
         for target_block in range(start_block, end_block - 1, -1):
