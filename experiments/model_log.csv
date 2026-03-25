@@ -25,3 +25,5 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
 2026-03-20 03:20:03,21_chchchchchanges,sdnz9mz7,148,0.01678,"Fewer epochs per layer, lower base learning rate, fix validation issue, use huber loss, use sqrt of weights for balancing, implement horizontal flip augmentation, remove bottom crop"
 2026-03-20 17:47:00,23_more_epochs_per_unfreeze,h8d1feny,174,0.01531,"20 epochs per layer, keep last 6 frozen. Also added some things like prediction file generation at the end."
 2026-03-20 19:42:51,24_larger_image_crop_wheels,jb3bw9jw,121,0.01473,Use 224x224 image but also crop the wheels out.
+2026-03-24 23:09:43,26_MobileNetV3Large,6lk64p78,74,0.01894,Using MobileNetV3Large
+2026-03-25 08:29:08,27_all_data,w5oyg980,52,0.01718,"Using all data, including bad images and no corrections"
