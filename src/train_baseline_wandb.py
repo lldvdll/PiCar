@@ -480,16 +480,19 @@ def build_initial_model():
 
     model = models.Model(inputs=inputs, outputs=[angle_out, speed_out])
     
-    speed_loss = "binary_crossentropy" if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else CONFIG["LOSS_FUNCTION"]
-    speed_metric = "accuracy" if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else "mse"
-    
     opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_WARMUP"], clipnorm=1.0)
+    
+    speed_loss = "binary_crossentropy" if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else CONFIG["LOSS_FUNCTION"]
+    
+    # ALWAYS track MSE, but add Accuracy if doing classification
+    speed_metrics = ["accuracy", "mse"] if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else ["mse"]
+    
     model.compile(
         optimizer=opt,
         loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': speed_loss},
         loss_weights={'angle_output': CONFIG.get("LOSS_WEIGHT_ANGLE", 1.0), 'speed_output': CONFIG.get("LOSS_WEIGHT_SPEED", 1.0)},
-        metrics={'angle_output': 'mse', 'speed_output': speed_metric}
-    ) 
+        metrics={'angle_output': ['mse'], 'speed_output': speed_metrics}
+    )
                   
     return model, base_model
 
@@ -722,13 +725,15 @@ def main():
             opt = optimizers.Adam(learning_rate=current_lr, clipnorm=1.0)
             
             speed_loss = "binary_crossentropy" if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else CONFIG["LOSS_FUNCTION"]
-            speed_metric = "accuracy" if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else "mse"
+            
+            # ALWAYS track MSE, but add Accuracy if doing classification
+            speed_metrics = ["accuracy", "mse"] if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else ["mse"]
             
             model.compile(
                 optimizer=opt,
                 loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': speed_loss},
                 loss_weights={'angle_output': CONFIG.get("LOSS_WEIGHT_ANGLE", 1.0), 'speed_output': CONFIG.get("LOSS_WEIGHT_SPEED", 1.0)},
-                metrics={'angle_output': 'mse', 'speed_output': speed_metric}
+                metrics={'angle_output': ['mse'], 'speed_output': speed_metrics}
             )
             
             target_epoch = current_epoch + epochs_per_step
