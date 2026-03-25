@@ -54,9 +54,9 @@ CONFIG = {
     "LOSS_WEIGHT_SPEED": 5.0,        
     
     # Bumped resolution for better feature extraction
-    "IMG_WIDTH_TARGET": 256,  
-    "IMG_HEIGHT_TARGET": 256,
-    "CROP_TOP_PIXELS": 60, 
+    "IMG_WIDTH_TARGET": 224,  
+    "IMG_HEIGHT_TARGET": 224,
+    "CROP_TOP_PIXELS": 40, 
     "CROP_BOTTOM_PIXELS": 0, 
     "CHANNELS": 3,
     
@@ -67,18 +67,18 @@ CONFIG = {
     "AUG_SATURATION_LOWER": 0.8,
     "AUG_SATURATION_UPPER": 1.2,
     "AUG_HUE_DELTA": 0.1,         
-    "AUG_ROTATION_FACTOR": 0.05,
-    "AUG_TILT_FACTOR": 0.05,
+    "AUG_ROTATION_FACTOR": 0.01,
+    "AUG_TILT_FACTOR": 0.01,
     "AUG_CUTOUT_PROB": 0.3,        
     "AUG_CUTOUT_MIN_PIX": 30,      
     "AUG_CUTOUT_MAX_PIX": 80,      
     
     # Simplified Training Dynamics
     "EPOCHS_WARMUP": 5,             
-    "EPOCHS_FINETUNE": 15, 
+    "EPOCHS_FINETUNE": 25, 
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-5, 
-    "BATCH_SIZE": 16, # Lowered to fit heavier models in VRAM
+    "BATCH_SIZE": 8, # Lowered to fit heavier models in VRAM
     "LOSS_FUNCTION": "huber",
     
     # --- HEAVYWEIGHT BASE MODEL ---
@@ -92,6 +92,24 @@ CONFIG = {
 }
 
 CONFIG["INPUT_SHAPE"] = (CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"], CONFIG["CHANNELS"])
+
+# ==============================================================================
+# GPU SETUP
+# ==============================================================================
+physical_devices = tf.config.list_physical_devices('GPU')
+if physical_devices:
+    try:
+        for gpu in physical_devices:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        print("[INFO] VRAM memory growth enabled. GPU is ready!\n")
+    except RuntimeError as e:
+        print(f"[ERROR] GPU Setup failed: {e}\n")
+
+# --- ADD THIS MIXED PRECISION BLOCK HERE ---
+print("[INFO] Enabling Mixed Precision (Float16)...")
+tf.keras.mixed_precision.set_global_policy('mixed_float16')
+# -------------------------------------------
+
 
 # --- DATA PIPELINE (Reused from your baseline) ---
 random_rotation_layer = tf.keras.layers.RandomRotation(factor=CONFIG["AUG_ROTATION_FACTOR"], fill_mode='nearest')
