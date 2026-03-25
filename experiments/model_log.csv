@@ -27,3 +27,4 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
 2026-03-20 19:42:51,24_larger_image_crop_wheels,jb3bw9jw,121,0.01473,Use 224x224 image but also crop the wheels out.
 2026-03-24 23:09:43,26_MobileNetV3Large,6lk64p78,74,0.01894,Using MobileNetV3Large
 2026-03-25 08:29:08,27_all_data,w5oyg980,52,0.01718,"Using all data, including bad images and no corrections"
+2026-03-25 09:27:18,28_binary_speed,upm1bbzq,42,0.10494,Binary classifier for speed. Also unfreeze more
