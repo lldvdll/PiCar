@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "26_MobileNetV3Large",
-    "DESCRIPTION": "Using MobileNetV3Large",
+    "EXPERIMENT_NAME": "27_all_data",
+    "DESCRIPTION": "Using all data, including bad images and no corrections",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -55,13 +55,14 @@ CONFIG = {
     "CORRECTIONS_CSV": "data/training_data/corrections.csv",
     
     # --- Data & Submission Settings ---
+    "USE_CLEAN_DATA": False,     # Set to True to drop bad images and apply corrections
     "SNAP_SUBMISSION": "angle",  # Options: "angle", "speed", "both", or "None" 
     
     # --- Image Preprocessing ---
     "IMG_WIDTH_TARGET": 224,  
     "IMG_HEIGHT_TARGET": 224,
-    "CROP_TOP_PIXELS": 100, 
-    "CROP_BOTTOM_PIXELS": 30, 
+    "CROP_TOP_PIXELS": 60, 
+    "CROP_BOTTOM_PIXELS": 0, 
     "CHANNELS": 3,
     
 # --- Data Augmentation ---
@@ -73,18 +74,18 @@ CONFIG = {
     "AUG_SATURATION_UPPER": 1.1,
     "AUG_HUE_DELTA": 0.05,         
     "AUG_NOISE_STDDEV": 0.005,
-    "AUG_ROTATION_FACTOR": 0.005,
-    "AUG_TILT_FACTOR": 0.01,
+    "AUG_ROTATION_FACTOR": 0.02,
+    "AUG_TILT_FACTOR": 0.05,
     "AUG_CUTOUT_PROB": 0.2,        # 50% chance to apply cutout
-    "AUG_CUTOUT_MIN_PIX": 10,      # Minimum mask size
-    "AUG_CUTOUT_MAX_PIX": 30,      # Maximum mask size
+    "AUG_CUTOUT_MIN_PIX": 20,      # Minimum mask size
+    "AUG_CUTOUT_MAX_PIX": 60,      # Maximum mask size
     
 # --- Progressive Unfreezing Hyperparameters ---
     "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_PER_UNFREEZE_STEP": 15, # Epochs to train EACH time a new block is unfrozen
+    "EPOCHS_PER_UNFREEZE_STEP": 10, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE_START": 1e-5, # Starting LR for the first unfrozen block
-    "UNFREEZE_LR_DECAY": 0.9,             # Multiply LR by this amount after every block step
+    "UNFREEZE_LR_DECAY": 0.95,             # Multiply LR by this amount after every block step
     "BATCH_SIZE": 32,
     "OPTIMIZER": "adam",
     "LOSS_FUNCTION": "huber",
@@ -308,43 +309,52 @@ def prepare_data_pipelines():
         Set batch size
         Return training and valudation sets
     """
-    print("[INFO] Loading and preparing data...")
+    use_clean = CONFIG.get("USE_CLEAN_DATA", False)
+    print(f"[INFO] Loading and preparing data (USE_CLEAN_DATA = {use_clean})...")
     df = pd.read_csv(CONFIG["TRAIN_CSV"])
     
-    # 1. APPLY CORRECTIONS FIRST
-    if os.path.exists(CONFIG.get("CORRECTIONS_CSV", "")):
-        print("[INFO] Applying label corrections...")
-        corr_df = pd.read_csv(CONFIG["CORRECTIONS_CSV"])
-        # Extract numeric ID from '123.png'
-        corr_df['image_id'] = corr_df['filename'].str.replace('.png', '', regex=False).astype(float).astype(int)
-        
-        df = df.set_index('image_id')
-        corr_df = corr_df.set_index('image_id')
-        df.update(corr_df[['angle', 'speed']]) # Overwrites old labels with corrected ones
-        df = df.reset_index()
+    if use_clean:
+        # 1. APPLY CORRECTIONS
+        if os.path.exists(CONFIG.get("CORRECTIONS_CSV", "")):
+            print("  -> Applying label corrections...")
+            corr_df = pd.read_csv(CONFIG["CORRECTIONS_CSV"])
+            corr_df['image_id'] = corr_df['filename'].str.replace('.png', '', regex=False).astype(float).astype(int)
+            df = df.set_index('image_id')
+            corr_df = corr_df.set_index('image_id')
+            df.update(corr_df[['angle', 'speed']]) 
+            df = df.reset_index()
 
-    # 2. IDENTIFY AND REMOVE BAD IMAGES
-    bad_df = pd.read_csv(CONFIG["BAD_IMG_CSV"])
-    bad_list = bad_df['filename'].astype(str).tolist()
+        # 2. REMOVE BAD IMAGES
+        print("  -> Removing bad images...")
+        bad_df = pd.read_csv(CONFIG["BAD_IMG_CSV"])
+        bad_list = bad_df['filename'].astype(str).tolist()
+        df['check_name'] = df['image_id'].astype(float).astype(int).astype(str) + '.png'
+        clean_df = df[~df['check_name'].isin(bad_list)].copy()
+        df = clean_df.drop(columns=['check_name'])
     
-    # Create check_name safely
-    df['check_name'] = df['image_id'].astype(float).astype(int).astype(str) + '.png'
-    
-    # Filter them out
-    clean_df = df[~df['check_name'].isin(bad_list)].copy()
-    print(f"[INFO] Removed {len(df) - len(clean_df)} bad images. Clean dataset size: {len(clean_df)}")
-    
-    df = clean_df.drop(columns=['check_name'])
-    
-    # 1. SPLIT FIRST to guarantee a pure, unseen validation set
+    # SPLIT FIRST to guarantee a pure validation set
     train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
     
-    # 2. BALANCE SECOND (and apply sqrt to weights to soften extreme oversampling)
-    train_df['sqrt_weight'] = np.sqrt(train_df['sample_weight'])
-    train_df['weight'] = train_df['sample_weight']
+    # CALCULATE DYNAMIC WEIGHTS ON THE TRAINING SET
+    print("[INFO] Calculating dynamic joint-distribution weights...")
+    train_df['angle_bin'] = pd.cut(train_df['angle'], bins=10, labels=False, include_lowest=True)
+    train_df['speed_bin'] = pd.cut(train_df['speed'], bins=2, labels=False, include_lowest=True)
+    
+    joint_counts = train_df.groupby(['angle_bin', 'speed_bin']).size()
+    total_samples = len(train_df)
+    num_bins = len(joint_counts)
+    
+    def get_weight(row):
+        count = joint_counts.get((row['angle_bin'], row['speed_bin']), 1)
+        return total_samples / (num_bins * count)
+        
+    train_df['weight'] = train_df.apply(get_weight, axis=1)
+    
+    # BALANCE SECOND
+    print("[INFO] Balancing training dataset via inverse frequency sampling...")
     train_df = train_df.sample(n=len(train_df), replace=True, weights='weight', random_state=42)
     
-    print(f"[INFO] Train split: {len(train_df)} | Val split: {len(val_df)} (No leakage)")
+    print(f"[INFO] Train split: {len(train_df)} | Val split: {len(val_df)}")
     
     def create_ds(dataframe, is_training):
         paths = dataframe['filepath'].values
@@ -482,50 +492,53 @@ class WandbLRCustomLogger(tf.keras.callbacks.Callback):
             wandb.log({"learning_rate": lr}, commit=False)
 
 def generate_comprehensive_predictions(model, CONFIG, exp_dir):
-    print("\n[INFO] Generating comprehensive predictions file (This will take a few minutes for accurate latency tracking)...")
+    print("\n[INFO] Generating comprehensive predictions file...")
     import time
     
     train_base = pd.read_csv(CONFIG["TRAIN_CSV"])
     test_base = pd.read_csv(CONFIG["SUBMISSION_TEMPLATE"])
+    use_clean = CONFIG.get("USE_CLEAN_DATA", False)
     
-    # Re-apply corrections to match training logic
-    if os.path.exists(CONFIG.get("CORRECTIONS_CSV", "")):
-        corr_df = pd.read_csv(CONFIG["CORRECTIONS_CSV"])
-        corr_df['image_id'] = corr_df['filename'].str.replace('.png', '', regex=False).astype(float).astype(int)
-        train_base = train_base.set_index('image_id')
-        corr_df = corr_df.set_index('image_id')
-        train_base.update(corr_df[['angle', 'speed']])
-        train_base = train_base.reset_index()
-        
-    bad_df = pd.read_csv(CONFIG["BAD_IMG_CSV"])
-    bad_list = bad_df['filename'].astype(str).tolist()
-    
-    # Tag splits
-    train_base['check_name'] = train_base['image_id'].astype(float).astype(int).astype(str) + '.png'
     train_base['split'] = 'unknown'
-    train_base.loc[train_base['check_name'].isin(bad_list), 'split'] = 'excluded'
+    
+    if use_clean:
+        if os.path.exists(CONFIG.get("CORRECTIONS_CSV", "")):
+            corr_df = pd.read_csv(CONFIG["CORRECTIONS_CSV"])
+            corr_df['image_id'] = corr_df['filename'].str.replace('.png', '', regex=False).astype(float).astype(int)
+            train_base = train_base.set_index('image_id')
+            corr_df = corr_df.set_index('image_id')
+            train_base.update(corr_df[['angle', 'speed']])
+            train_base = train_base.reset_index()
+            
+        bad_df = pd.read_csv(CONFIG["BAD_IMG_CSV"])
+        bad_list = bad_df['filename'].astype(str).tolist()
+        train_base['check_name'] = train_base['image_id'].astype(float).astype(int).astype(str) + '.png'
+        train_base.loc[train_base['check_name'].isin(bad_list), 'split'] = 'excluded'
     
     clean_train = train_base[train_base['split'] != 'excluded'].copy()
-    
-    # Re-calculate Joint Distribution Weights to log them
-    clean_train['angle_bin'] = pd.cut(clean_train['angle'], bins=10, labels=False)
-    clean_train['speed_bin'] = pd.cut(clean_train['speed'], bins=2, labels=False)
-    joint_counts = clean_train.groupby(['angle_bin', 'speed_bin']).size()
-    total_samples = len(clean_train)
-    
-    def get_weight(row):
-        count = joint_counts.get((row['angle_bin'], row['speed_bin']), 1)
-        return total_samples / (len(joint_counts) * count)
-        
-    clean_train['weight'] = clean_train.apply(get_weight, axis=1)
     
     # Recreate the exact train/val split to tag them
     t_df, v_df = train_test_split(clean_train, test_size=0.2, random_state=42)
     train_base.loc[train_base['image_id'].isin(t_df['image_id']), 'split'] = 'train'
     train_base.loc[train_base['image_id'].isin(v_df['image_id']), 'split'] = 'val'
     
+    # Re-calculate Joint Distribution Weights strictly on the training subset
+    train_only = train_base[train_base['split'] == 'train'].copy()
+    train_only['angle_bin'] = pd.cut(train_only['angle'], bins=10, labels=False, include_lowest=True)
+    train_only['speed_bin'] = pd.cut(train_only['speed'], bins=2, labels=False, include_lowest=True)
+    
+    joint_counts = train_only.groupby(['angle_bin', 'speed_bin']).size()
+    total_samples = len(train_only)
+    num_bins = len(joint_counts)
+    
+    def get_weight(row):
+        count = joint_counts.get((row['angle_bin'], row['speed_bin']), 1)
+        return total_samples / (num_bins * count)
+        
+    train_only['weight'] = train_only.apply(get_weight, axis=1)
+    
     # Map weights back to the base frame
-    weight_map = dict(zip(clean_train['image_id'], clean_train['weight']))
+    weight_map = dict(zip(train_only['image_id'], train_only['weight']))
     train_base['weight'] = train_base['image_id'].map(weight_map)
     
     results = []

@@ -47,9 +47,10 @@ Done
 - [23] 20 epochs per layer, keep last 6 frozen. Also added some things like prediction file generation at the end.
 - [24] use larger images. also crop the bottom out again, the wheels don't always match the angle. Definite improvement, but not significant
 - [25] efficientnetb3. Did better. Still not great with speed. Trying higher learning rate - 1e-4 with 0.9 decay. Weights too big for git
-- [26] Switch to MobileNetV3Large. Larger model (than MobileNetV2), but small enough for git pipeline. Comparable to EfficientNetB0. Also now locking batchnorm
+- [26] Switch to MobileNetV3Large. Larger model (than MobileNetV2), but small enough for git pipeline. Comparable to EfficientNetB0. Also now locking batchnorm. Not great
+- [27] Try dropping cleaned data, it's in the test set anyway so need to learn it. Also reduced learning rate decay and increased some augmentations to be more appropriate for 224x224.
 
-
+- Are training and test actually different images? I should md5 them. Maybe there's an easteregg to just copy the labels across, lol
 - Consider changing speed to binary output and relevance of huber loss. Also consider snapping/binning angle
 
 
