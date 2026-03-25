@@ -41,8 +41,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "28_binary_speed",
-    "DESCRIPTION": "Binary classifier for speed. Also unfreeze more",
+    "EXPERIMENT_NAME": "29_less_freezing",
+    "DESCRIPTION": "Unfreeze to block 5, 10 epochs per unfreeze, longer warmup",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -86,8 +86,8 @@ CONFIG = {
     "AUG_CUTOUT_MAX_PIX": 60,      # Maximum mask size
     
 # --- Progressive Unfreezing Hyperparameters ---
-    "EPOCHS_WARMUP": 5,             # Train frozen base with high LR
-    "EPOCHS_PER_UNFREEZE_STEP": 8, # Epochs to train EACH time a new block is unfrozen
+    "EPOCHS_WARMUP": 10,             # Train frozen base with high LR
+    "EPOCHS_PER_UNFREEZE_STEP": 10, # Epochs to train EACH time a new block is unfrozen
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE_START": 1e-5, # Starting LR for the first unfrozen block
     "UNFREEZE_LR_DECAY": 0.95,             # Multiply LR by this amount after every block step
@@ -99,7 +99,7 @@ CONFIG = {
     "BASE_MODEL": "MobileNetV3Large",
     "BASE_WEIGHTS": "imagenet",
     "CUT_AT_BLOCK": None,                   # Defaults to block 16
-    "FREEZE_UP_TO_BLOCK": 10,                # 0 means eventually unfreeze all blocks (1 down to 1)
+    "FREEZE_UP_TO_BLOCK": 5,                # 0 means eventually unfreeze all blocks (1 down to 1)
     
     # --- Attention Head ---
     "USE_ATTENTION_BLOCK": False,
