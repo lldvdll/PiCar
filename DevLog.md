@@ -51,7 +51,7 @@ Done
 - [27] Try dropping cleaned data, it's in the test set anyway so need to learn it. Also reduced learning rate decay and increased some augmentations to be more appropriate for 224x224. Also relaxed crop - 100,30 > 60,0. Better results. Speed still plateauing so I'll try to address this
 - [28] Binary speed - set speed to binary classifier. Also unfreeze down to 8 now.
 - [29] Loss weighting - use 
-- [30] Unfreeze more blocks
+- [30] Switch to ConvNeXtBase - just use a bigger model, focus on optimising for Kaggle instead of trying to simultaneously train for kaggle and car. Just get score down with a big model.
 - [31] Validation stratification
 
 - Are training and test actually different images? I should md5 them. Maybe there's an easteregg to just copy the labels across, lol
