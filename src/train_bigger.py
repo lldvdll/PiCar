@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
-# --- ADDED EfficientNetB0 FOR SMALLER FOOTPRINT ---
 from tensorflow.keras.applications import ConvNeXtBase, EfficientNetV2S, EfficientNetV2M, EfficientNetB0
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
@@ -40,7 +39,6 @@ CONFIG = {
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
-    # --- NEW: ISOLATION TOGGLE ---
     "TARGET_VARIABLE": "angle",  # Options: "angle" or "speed"
     
     "TRAIN_CSV": os.path.join("data", "train_clean_weighted.csv"),
@@ -75,12 +73,11 @@ CONFIG = {
     "AUG_CUTOUT_MAX_PIX": 80,      
     
     "EPOCHS_WARMUP": 5,             
-    "EPOCHS_FINETUNE": 20, # Dropped slightly as requested
+    "EPOCHS_FINETUNE": 20, 
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-5, 
-    "BATCH_SIZE": 16, # Can increase batch size because network is smaller/single head
+    "BATCH_SIZE": 16, 
     
-    # --- LIGHTER EFFICIENTNET ---
     "BASE_MODEL": "EfficientNetB0", 
     "BASE_WEIGHTS": "imagenet",
     
@@ -91,6 +88,8 @@ CONFIG = {
 }
 
 CONFIG["INPUT_SHAPE"] = (CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"], CONFIG["CHANNELS"])
+# --- DYNAMIC LAYER NAMING ---
+TARGET_LAYER_NAME = f"{CONFIG['TARGET_VARIABLE']}_output"
 
 # --- DATA PIPELINE ---
 random_rotation_layer = tf.keras.layers.RandomRotation(factor=CONFIG["AUG_ROTATION_FACTOR"], fill_mode='nearest')
@@ -147,13 +146,12 @@ def apply_augmentations(img, labels):
         flip_cond = tf.random.uniform([]) < 0.5
         img = tf.cond(flip_cond, lambda: tf.image.flip_left_right(img), lambda: img)
         
-        # Only invert angle if we are tracking it
         if CONFIG["TARGET_VARIABLE"] == "angle":
-            new_label = tf.cond(flip_cond, lambda: 1.0 - labels['target_output'], lambda: labels['target_output'])
+            new_label = tf.cond(flip_cond, lambda: 1.0 - labels[TARGET_LAYER_NAME], lambda: labels[TARGET_LAYER_NAME])
         else:
-            new_label = labels['target_output']
+            new_label = labels[TARGET_LAYER_NAME]
             
-        labels = {'target_output': new_label}
+        labels = {TARGET_LAYER_NAME: new_label}
         img = random_cutout(img, probability=CONFIG["AUG_CUTOUT_PROB"], min_pixels=CONFIG["AUG_CUTOUT_MIN_PIX"], max_pixels=CONFIG["AUG_CUTOUT_MAX_PIX"])
     return img, labels
 
@@ -183,11 +181,11 @@ def prepare_data_pipelines():
     
     def create_ds(dataframe, is_training):
         paths = dataframe['filepath'].values
-        # Only extract the target we care about
         targets = dataframe[CONFIG["TARGET_VARIABLE"]].values.astype(np.float32)
         
+        # Use TARGET_LAYER_NAME to map the dataset target to the correct layer name
         ds = tf.data.Dataset.from_tensor_slices((paths, targets))
-        ds = ds.map(lambda path, target: (read_and_decode_image(path), {'target_output': target}), num_parallel_calls=tf.data.AUTOTUNE)
+        ds = ds.map(lambda path, target: (read_and_decode_image(path), {TARGET_LAYER_NAME: target}), num_parallel_calls=tf.data.AUTOTUNE)
         ds = ds.cache() 
         if is_training:
             ds = ds.shuffle(buffer_size=len(dataframe))  
@@ -200,11 +198,11 @@ def prepare_data_pipelines():
 def get_compile_args(lr):
     opt = optimizers.Adam(learning_rate=lr, clipnorm=1.0)
     if CONFIG["TARGET_VARIABLE"] == "angle":
-        return {"optimizer": opt, "loss": {'target_output': CONFIG["LOSS_FUNCTION"]}, "metrics": {'target_output': ['mse']}}
+        return {"optimizer": opt, "loss": {TARGET_LAYER_NAME: CONFIG["LOSS_FUNCTION"]}, "metrics": {TARGET_LAYER_NAME: ['mse']}}
     else:
         loss = "binary_crossentropy" if CONFIG.get("SPEED_AS_CLASSIFICATION") else CONFIG["LOSS_FUNCTION"]
         metrics = ["accuracy", "mse"] if CONFIG.get("SPEED_AS_CLASSIFICATION") else ["mse"]
-        return {"optimizer": opt, "loss": {'target_output': loss}, "metrics": {'target_output': metrics}}
+        return {"optimizer": opt, "loss": {TARGET_LAYER_NAME: loss}, "metrics": {TARGET_LAYER_NAME: metrics}}
 
 # --- MODEL ARCHITECTURE ---
 def build_initial_model():
@@ -226,10 +224,11 @@ def build_initial_model():
     x = base_model(inputs, training=False) 
     x = layers.GlobalAveragePooling2D(name="global_gap")(x)
     
-    # Build Single Head
     x = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
     x = layers.Dropout(CONFIG["DROPOUT_RATE"])(x)
-    output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='target_output')(x)
+    
+    # Use TARGET_LAYER_NAME so Keras inherently logs metrics using this exact string
+    output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name=TARGET_LAYER_NAME)(x)
 
     model = models.Model(inputs=inputs, outputs=output)
     model.compile(**get_compile_args(CONFIG["LEARNING_RATE_WARMUP"]))
