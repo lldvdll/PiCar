@@ -51,7 +51,7 @@ CONFIG = {
     
     "SPEED_AS_CLASSIFICATION": True, 
     "LOSS_WEIGHT_ANGLE": 1.0,        
-    "LOSS_WEIGHT_SPEED": 5.0,        
+    "LOSS_WEIGHT_SPEED": 3.0,        
     
     # Bumped resolution for better feature extraction
     "IMG_WIDTH_TARGET": 224,  
