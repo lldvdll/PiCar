@@ -1,14 +1,11 @@
 import os
-import json
 import time
-import csv
-import shutil
 import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
-# --- KAGGLE HEAVYWEIGHT IMPORTS ---
-from tensorflow.keras.applications import ConvNeXtBase, EfficientNetV2S, EfficientNetV2M
+# --- ADDED EfficientNetB0 FOR SMALLER FOOTPRINT ---
+from tensorflow.keras.applications import ConvNeXtBase, EfficientNetV2S, EfficientNetV2M, EfficientNetB0
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
 
@@ -16,7 +13,7 @@ import wandb
 from wandb.integration.keras import WandbMetricsLogger
 
 # ==============================================================================
-# GPU SETUP
+# GPU SETUP & MIXED PRECISION (Keep Disabled for CPU Local Inference)
 # ==============================================================================
 physical_devices = tf.config.list_physical_devices('GPU')
 if physical_devices:
@@ -24,8 +21,12 @@ if physical_devices:
         for gpu in physical_devices:
             tf.config.experimental.set_memory_growth(gpu, True)
         print("[INFO] VRAM memory growth enabled. GPU is ready!\n")
+        print("[INFO] Enabling Mixed Precision (Float16) for GPU...")
+        tf.keras.mixed_precision.set_global_policy('mixed_float16')
     except RuntimeError as e:
         print(f"[ERROR] GPU Setup failed: {e}\n")
+else:
+    print("[WARNING] No GPU detected. Running in standard Float32 mode for CPU.")
 
 # ==============================================================================
 # 1. KAGGLE CONFIGURATION 
@@ -34,10 +35,13 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "31_EfficientNetV2S",
-    "DESCRIPTION": "Heavyweight architecture test for Kaggle generalisation. EfficientNetV2S",
+    "EXPERIMENT_NAME": "32_EfficientNetB0_Angle",
+    "DESCRIPTION": "Isolated Angle model on lighter EfficientNet.",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
+    
+    # --- NEW: ISOLATION TOGGLE ---
+    "TARGET_VARIABLE": "angle",  # Options: "angle" or "speed"
     
     "TRAIN_CSV": os.path.join("data", "train_clean_weighted.csv"),
     "TRAIN_IMG_DIR": os.path.join("data", "training_data", "training_data"),
@@ -45,15 +49,12 @@ CONFIG = {
     "SUBMISSION_TEMPLATE": os.path.join("data", "sample_submission.csv"),
     "BAD_IMG_CSV": os.path.join("data", "bad_images.csv"),
     
-    # Kaggle strategy: Train on EVERYTHING
     "USE_CLEAN_DATA": False,     
-    "SNAP_SUBMISSION": None,  # Options: "angle", "speed", "both", or "None" 
+    "SNAP_SUBMISSION": None,  
     
     "SPEED_AS_CLASSIFICATION": True, 
-    "LOSS_WEIGHT_ANGLE": 1.0,        
-    "LOSS_WEIGHT_SPEED": 3.0,        
+    "LOSS_FUNCTION": "huber",
     
-    # Bumped resolution for better feature extraction
     "IMG_WIDTH_TARGET": 224,  
     "IMG_HEIGHT_TARGET": 224,
     "CROP_TOP_PIXELS": 40, 
@@ -73,45 +74,25 @@ CONFIG = {
     "AUG_CUTOUT_MIN_PIX": 30,      
     "AUG_CUTOUT_MAX_PIX": 80,      
     
-    # Simplified Training Dynamics
     "EPOCHS_WARMUP": 5,             
-    "EPOCHS_FINETUNE": 25, 
+    "EPOCHS_FINETUNE": 20, # Dropped slightly as requested
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-5, 
-    "BATCH_SIZE": 8, # Lowered to fit heavier models in VRAM
-    "LOSS_FUNCTION": "huber",
+    "BATCH_SIZE": 16, # Can increase batch size because network is smaller/single head
     
-    # --- HEAVYWEIGHT BASE MODEL ---
-    "BASE_MODEL": "ConvNeXtBase", # Options: ConvNeXtBase, EfficientNetV2S, EfficientNetV2M
+    # --- LIGHTER EFFICIENTNET ---
+    "BASE_MODEL": "EfficientNetB0", 
     "BASE_WEIGHTS": "imagenet",
     
     "DENSE_UNITS_1": 256,       
-    "DROPOUT_RATE": 0.4, # Increased to prevent overfitting massive networks        
-    "ACTIVATION_HIDDEN": "gelu", # GELU often performs better than RELU on modern architectures
+    "DROPOUT_RATE": 0.4, 
+    "ACTIVATION_HIDDEN": "gelu", 
     "ACTIVATION_OUTPUT": "sigmoid"
 }
 
 CONFIG["INPUT_SHAPE"] = (CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"], CONFIG["CHANNELS"])
 
-# ==============================================================================
-# GPU SETUP
-# ==============================================================================
-physical_devices = tf.config.list_physical_devices('GPU')
-if physical_devices:
-    try:
-        for gpu in physical_devices:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        print("[INFO] VRAM memory growth enabled. GPU is ready!\n")
-    except RuntimeError as e:
-        print(f"[ERROR] GPU Setup failed: {e}\n")
-
-# --- ADD THIS MIXED PRECISION BLOCK HERE ---
-print("[INFO] Enabling Mixed Precision (Float16)...")
-tf.keras.mixed_precision.set_global_policy('mixed_float16')
-# -------------------------------------------
-
-
-# --- DATA PIPELINE (Reused from your baseline) ---
+# --- DATA PIPELINE ---
 random_rotation_layer = tf.keras.layers.RandomRotation(factor=CONFIG["AUG_ROTATION_FACTOR"], fill_mode='nearest')
 random_translation_layer = tf.keras.layers.RandomTranslation(height_factor=CONFIG["AUG_TILT_FACTOR"], width_factor=0.0, fill_mode='nearest')
 
@@ -165,13 +146,19 @@ def apply_augmentations(img, labels):
         img = augment_image(img)
         flip_cond = tf.random.uniform([]) < 0.5
         img = tf.cond(flip_cond, lambda: tf.image.flip_left_right(img), lambda: img)
-        new_angle = tf.cond(flip_cond, lambda: 1.0 - labels['angle_output'], lambda: labels['angle_output'])
-        labels = {'angle_output': new_angle, 'speed_output': labels['speed_output']}
+        
+        # Only invert angle if we are tracking it
+        if CONFIG["TARGET_VARIABLE"] == "angle":
+            new_label = tf.cond(flip_cond, lambda: 1.0 - labels['target_output'], lambda: labels['target_output'])
+        else:
+            new_label = labels['target_output']
+            
+        labels = {'target_output': new_label}
         img = random_cutout(img, probability=CONFIG["AUG_CUTOUT_PROB"], min_pixels=CONFIG["AUG_CUTOUT_MIN_PIX"], max_pixels=CONFIG["AUG_CUTOUT_MAX_PIX"])
     return img, labels
 
 def prepare_data_pipelines():
-    print(f"[INFO] Loading data (USE_CLEAN_DATA = {CONFIG.get('USE_CLEAN_DATA')})...")
+    print(f"[INFO] Loading data for single target: {CONFIG['TARGET_VARIABLE'].upper()}")
     df = pd.read_csv(CONFIG["TRAIN_CSV"])
     
     if CONFIG.get("USE_CLEAN_DATA"):
@@ -182,7 +169,6 @@ def prepare_data_pipelines():
     
     train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
     
-    # Joint-distribution weighting logic
     train_df['angle_bin'] = pd.cut(train_df['angle'], bins=10, labels=False, include_lowest=True)
     train_df['speed_bin'] = pd.cut(train_df['speed'], bins=2, labels=False, include_lowest=True)
     joint_counts = train_df.groupby(['angle_bin', 'speed_bin']).size()
@@ -197,10 +183,11 @@ def prepare_data_pipelines():
     
     def create_ds(dataframe, is_training):
         paths = dataframe['filepath'].values
-        angles = dataframe['angle'].values.astype(np.float32)
-        speeds = dataframe['speed'].values.astype(np.float32)
-        ds = tf.data.Dataset.from_tensor_slices((paths, angles, speeds))
-        ds = ds.map(lambda path, angle, speed: (read_and_decode_image(path), {'angle_output': angle, 'speed_output': speed}), num_parallel_calls=tf.data.AUTOTUNE)
+        # Only extract the target we care about
+        targets = dataframe[CONFIG["TARGET_VARIABLE"]].values.astype(np.float32)
+        
+        ds = tf.data.Dataset.from_tensor_slices((paths, targets))
+        ds = ds.map(lambda path, target: (read_and_decode_image(path), {'target_output': target}), num_parallel_calls=tf.data.AUTOTUNE)
         ds = ds.cache() 
         if is_training:
             ds = ds.shuffle(buffer_size=len(dataframe))  
@@ -209,49 +196,43 @@ def prepare_data_pipelines():
     
     return create_ds(train_df, is_training=True), create_ds(val_df, is_training=False)
 
+# --- MODEL COMPILE HELPER ---
+def get_compile_args(lr):
+    opt = optimizers.Adam(learning_rate=lr, clipnorm=1.0)
+    if CONFIG["TARGET_VARIABLE"] == "angle":
+        return {"optimizer": opt, "loss": {'target_output': CONFIG["LOSS_FUNCTION"]}, "metrics": {'target_output': ['mse']}}
+    else:
+        loss = "binary_crossentropy" if CONFIG.get("SPEED_AS_CLASSIFICATION") else CONFIG["LOSS_FUNCTION"]
+        metrics = ["accuracy", "mse"] if CONFIG.get("SPEED_AS_CLASSIFICATION") else ["mse"]
+        return {"optimizer": opt, "loss": {'target_output': loss}, "metrics": {'target_output': metrics}}
+
 # --- MODEL ARCHITECTURE ---
 def build_initial_model():
     inputs = tf.keras.Input(shape=CONFIG["INPUT_SHAPE"])
     print(f"[INFO] Loading {CONFIG['BASE_MODEL']} as feature extractor...")
     
-    # Universal Heavyweight Loader
     if CONFIG["BASE_MODEL"] == "ConvNeXtBase":
         base_model = ConvNeXtBase(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
     elif CONFIG["BASE_MODEL"] == "EfficientNetV2S":
         base_model = EfficientNetV2S(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
     elif CONFIG["BASE_MODEL"] == "EfficientNetV2M":
         base_model = EfficientNetV2M(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
+    elif CONFIG["BASE_MODEL"] == "EfficientNetB0":
+        base_model = EfficientNetB0(input_shape=CONFIG["INPUT_SHAPE"], include_top=False, weights=CONFIG["BASE_WEIGHTS"])
     else:
-        raise ValueError("Unsupported Heavyweight BASE_MODEL.")
+        raise ValueError("Unsupported BASE_MODEL.")
 
     base_model.trainable = False 
     x = base_model(inputs, training=False) 
-    
-    # Generic Kaggle Head (No custom attention blocks needed for these massive models)
     x = layers.GlobalAveragePooling2D(name="global_gap")(x)
     
-    # Angle Branch
-    x_angle = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
-    x_angle = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_angle)
-    angle_out = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='angle_output')(x_angle)
+    # Build Single Head
+    x = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
+    x = layers.Dropout(CONFIG["DROPOUT_RATE"])(x)
+    output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='target_output')(x)
 
-    # Speed Branch
-    x_speed = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
-    x_speed = layers.Dropout(CONFIG["DROPOUT_RATE"])(x_speed)
-    speed_out = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name='speed_output')(x_speed)
-
-    model = models.Model(inputs=inputs, outputs=[angle_out, speed_out])
-    
-    opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_WARMUP"], clipnorm=1.0)
-    speed_loss = "binary_crossentropy" if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else CONFIG["LOSS_FUNCTION"]
-    speed_metrics = ["accuracy", "mse"] if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else ["mse"]
-    
-    model.compile(
-        optimizer=opt,
-        loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': speed_loss},
-        loss_weights={'angle_output': CONFIG.get("LOSS_WEIGHT_ANGLE", 1.0), 'speed_output': CONFIG.get("LOSS_WEIGHT_SPEED", 1.0)},
-        metrics={'angle_output': ['mse'], 'speed_output': speed_metrics}
-    )
+    model = models.Model(inputs=inputs, outputs=output)
+    model.compile(**get_compile_args(CONFIG["LEARNING_RATE_WARMUP"]))
     return model, base_model
 
 class WandbLRCustomLogger(tf.keras.callbacks.Callback):
@@ -259,64 +240,6 @@ class WandbLRCustomLogger(tf.keras.callbacks.Callback):
         if wandb.run is not None:
             lr = float(tf.keras.backend.get_value(self.model.optimizer.learning_rate))
             wandb.log({"learning_rate": lr}, commit=False)
-
-def generate_comprehensive_predictions(model, CONFIG, exp_dir):
-    print("\n[INFO] Generating comprehensive predictions file...")
-    train_base = pd.read_csv(CONFIG["TRAIN_CSV"])
-    test_base = pd.read_csv(CONFIG["SUBMISSION_TEMPLATE"])
-    
-    train_base['split'] = 'unknown'
-    t_df, v_df = train_test_split(train_base, test_size=0.2, random_state=42)
-    train_base.loc[train_base['image_id'].isin(t_df['image_id']), 'split'] = 'train'
-    train_base.loc[train_base['image_id'].isin(v_df['image_id']), 'split'] = 'val'
-    
-    results = []
-    huber = tf.keras.losses.Huber()
-    mse = tf.keras.losses.MeanSquaredError()
-    
-    def process_df(df, default_split):
-        for idx, row in df.iterrows():
-            if 'filepath' in row and pd.notna(row['filepath']):
-                img_path = row['filepath']
-            else:
-                filename = str(int(float(row['image_id']))) + '.png'
-                img_path = os.path.join(CONFIG["TEST_IMG_DIR"], filename)
-                
-            if not os.path.exists(img_path): continue
-            
-            img_raw = tf.io.read_file(img_path)
-            img = tf.image.decode_png(img_raw, channels=3)
-            img = tf.cast(img, tf.float32) / 255.0
-            
-            top = CONFIG.get("CROP_TOP_PIXELS", 0)
-            img = img[top:, :, :]
-            img = tf.image.resize(img, [CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"]])
-            img_tensor = tf.expand_dims(img, 0)
-            
-            start = time.time()
-            preds = model(img_tensor, training=False) 
-            inf_time = time.time() - start
-            
-            p_angle, p_speed = float(preds[0][0][0]), float(preds[1][0][0])
-            s_angle = round(p_angle * 15.0) / 15.0
-            s_speed = 1.0 if p_speed > 0.5 else 0.0
-            
-            true_a = row.get('angle', np.nan)
-            true_s = row.get('speed', np.nan)
-            
-            results.append({
-                'image_id': row['image_id'],
-                'split': row.get('split', default_split),
-                'inference_time_sec': inf_time,
-                'true_angle': true_a, 'true_speed': true_s,
-                'pred_angle': p_angle, 'pred_speed': p_speed,
-                'mse_loss_angle': float(mse([true_a], [p_angle])) if not np.isnan(true_a) else np.nan,
-                'mse_loss_speed': float(mse([true_s], [p_speed])) if not np.isnan(true_s) else np.nan,
-            })
-            
-    process_df(train_base, 'train')
-    process_df(test_base, 'test')
-    pd.DataFrame(results).to_csv(os.path.join(exp_dir, "comprehensive_predictions.csv"), index=False)
 
 def validate_image_paths(df, img_dir):
     df = df.dropna(subset=['image_id']) 
@@ -346,43 +269,25 @@ def main():
         WandbMetricsLogger(),
         WandbLRCustomLogger(),  
         ModelCheckpoint(filepath=os.path.join(exp_dir, "best_model.h5"), monitor="val_loss", save_best_only=True, verbose=1),
-        # Add ReduceLROnPlateau for robust fine-tuning
         ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, min_lr=1e-7, verbose=1)
     ]
     
-    # ------------------------------------------------------------------------------------
-    # PHASE 1: WARM-UP 
-    # ------------------------------------------------------------------------------------
     print(f"\n[INFO] --- PHASE 1: WARM-UP ({CONFIG['EPOCHS_WARMUP']} Epochs) ---")
     model.fit(train_ds, validation_data=val_ds, epochs=CONFIG["EPOCHS_WARMUP"], callbacks=callbacks)
     
-    # ------------------------------------------------------------------------------------
-    # PHASE 2: UNIVERSAL FINE-TUNING (Unfreeze All, Lock BatchNorm)
-    # ------------------------------------------------------------------------------------
     print(f"\n[INFO] --- PHASE 2: UNIVERSAL FINE-TUNING ---")
     base_model.trainable = True 
-    
-    # Universal backward lock for any architecture
     for layer in base_model.layers:
         if isinstance(layer, layers.BatchNormalization):
             layer.trainable = False   
             
-    opt = optimizers.Adam(learning_rate=CONFIG["LEARNING_RATE_FINETUNE"], clipnorm=1.0)
-    speed_loss = "binary_crossentropy" if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else CONFIG["LOSS_FUNCTION"]
-    speed_metrics = ["accuracy", "mse"] if CONFIG.get("SPEED_AS_CLASSIFICATION", False) else ["mse"]
-    
-    model.compile(
-        optimizer=opt,
-        loss={'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': speed_loss},
-        loss_weights={'angle_output': CONFIG.get("LOSS_WEIGHT_ANGLE", 1.0), 'speed_output': CONFIG.get("LOSS_WEIGHT_SPEED", 1.0)},
-        metrics={'angle_output': ['mse'], 'speed_output': speed_metrics}
-    )
+    model.compile(**get_compile_args(CONFIG["LEARNING_RATE_FINETUNE"]))
     
     model.fit(train_ds, validation_data=val_ds, epochs=CONFIG["EPOCHS_WARMUP"] + CONFIG["EPOCHS_FINETUNE"], 
               initial_epoch=CONFIG["EPOCHS_WARMUP"], callbacks=callbacks)
 
     # ------------------------------------------------------------------------------------
-    # SUBMISSION GENERATOR
+    # DYNAMIC BLANK-COLUMN SUBMISSION GENERATOR
     # ------------------------------------------------------------------------------------
     print("\n[INFO] Generating Kaggle submission...")
     best_model = tf.keras.models.load_model(os.path.join(exp_dir, "best_model.h5"))
@@ -392,17 +297,21 @@ def main():
     test_ds = tf.data.Dataset.from_tensor_slices(test_paths)
     test_ds = test_ds.map(read_and_decode_image, num_parallel_calls=tf.data.AUTOTUNE).batch(CONFIG["BATCH_SIZE"])
     
-    predictions = best_model.predict(test_ds)
-    submission_df = pd.DataFrame({'image_id': sub_df['image_id'], 'angle': predictions[0].flatten(), 'speed': predictions[1].flatten()})
+    predictions = best_model.predict(test_ds).flatten()
     
-    if CONFIG.get("SNAP_SUBMISSION") in ["angle", "both"]:
-        submission_df['angle'] = np.round(submission_df['angle'] * 15.0) / 15.0
-    if CONFIG.get("SNAP_SUBMISSION") in ["speed", "both"]:
-        submission_df['speed'] = np.where(submission_df['speed'] > 0.5, 1.0, 0.0)
+    if CONFIG["TARGET_VARIABLE"] == "angle":
+        if CONFIG.get("SNAP_SUBMISSION") in ["angle", "both"]:
+            predictions = np.round(predictions * 15.0) / 15.0
+        submission_df = pd.DataFrame({'image_id': sub_df['image_id'], 'angle': predictions, 'speed': ""})
+    else:
+        if CONFIG.get("SNAP_SUBMISSION") in ["speed", "both"]:
+            predictions = np.where(predictions > 0.5, 1.0, 0.0)
+        submission_df = pd.DataFrame({'image_id': sub_df['image_id'], 'angle': "", 'speed': predictions})
         
-    submission_df.to_csv(os.path.join(exp_dir, "submission.csv"), index=False)
+    submission_path = os.path.join(exp_dir, "submission.csv")
+    submission_df.to_csv(submission_path, index=False)
+    print(f"[SUCCESS] Partial Submission saved to: {submission_path}")
 
-    generate_comprehensive_predictions(best_model, CONFIG, exp_dir)    
     if wandb.run is not None: wandb.finish()
     
 if __name__ == "__main__":
