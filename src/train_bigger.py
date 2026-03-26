@@ -34,8 +34,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "30_ConvNeXtBase",
-    "DESCRIPTION": "Heavyweight architecture test for Kaggle generalisation.",
+    "EXPERIMENT_NAME": "31_EfficientNetV2S",
+    "DESCRIPTION": "Heavyweight architecture test for Kaggle generalisation. EfficientNetV2S",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
@@ -47,7 +47,7 @@ CONFIG = {
     
     # Kaggle strategy: Train on EVERYTHING
     "USE_CLEAN_DATA": False,     
-    "SNAP_SUBMISSION": "angle",  
+    "SNAP_SUBMISSION": None,  # Options: "angle", "speed", "both", or "None" 
     
     "SPEED_AS_CLASSIFICATION": True, 
     "LOSS_WEIGHT_ANGLE": 1.0,        
