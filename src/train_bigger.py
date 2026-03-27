@@ -34,8 +34,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "39_V2S_more_lr_speed",
-    "DESCRIPTION": "Increase learning rates again, freeze 1-3, more warm up epochs.",
+    "EXPERIMENT_NAME": "40_V2S_keep_bot_speed",
+    "DESCRIPTION": "Keep bottom pixels.",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
@@ -56,7 +56,7 @@ CONFIG = {
     "IMG_WIDTH_TARGET": 224,  
     "IMG_HEIGHT_TARGET": 224,
     "CROP_TOP_PIXELS": 60, 
-    "CROP_BOTTOM_PIXELS": 30, 
+    "CROP_BOTTOM_PIXELS": 0, 
     "CHANNELS": 3,
     
     "AUG_USE_AUGMENTATION": True,
@@ -72,9 +72,9 @@ CONFIG = {
     "AUG_CUTOUT_MIN_PIX": 30,      
     "AUG_CUTOUT_MAX_PIX": 80,      
     
-    "EPOCHS_WARMUP": 10,             
+    "EPOCHS_WARMUP": 8,             
     "EPOCHS_FINETUNE": 15, 
-    "LEARNING_RATE_WARMUP": 3e-3,
+    "LEARNING_RATE_WARMUP": 2e-3,
     "LEARNING_RATE_FINETUNE": 5e-5, 
     "BATCH_SIZE": 16, 
     
@@ -89,7 +89,7 @@ CONFIG = {
     
     "DENSE_UNITS_1": 256, 
     "DENSE_UNITS_2": 64,       
-    "DROPOUT_RATE": 0.25, 
+    "DROPOUT_RATE": 0.3, 
     "ACTIVATION_HIDDEN": "gelu", 
     "ACTIVATION_OUTPUT": "sigmoid"
 }
