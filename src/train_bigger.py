@@ -39,7 +39,7 @@ CONFIG = {
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
-    "TARGET_VARIABLE": "both",  # Options: "angle" or "speed" or "both"
+    "TRAINING_MODE": "both",  # Options: "angle" or "speed" or "both"
     
     "TRAIN_CSV": os.path.join("data", "train_clean_weighted.csv"),
     "TRAIN_IMG_DIR": os.path.join("data", "training_data", "training_data"),
