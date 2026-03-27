@@ -34,12 +34,12 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "40_V2S_keep_bot_speed",
+    "EXPERIMENT_NAME": "41_V2S_keep_bot_angle",
     "DESCRIPTION": "Keep bottom pixels.",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
-    "TRAINING_MODE": "speed",  # Options: "angle" or "speed" or "both"
+    "TRAINING_MODE": "angle",  # Options: "angle" or "speed" or "both"
     
     "TRAIN_CSV": os.path.join("data", "train_clean_weighted.csv"),
     "TRAIN_IMG_DIR": os.path.join("data", "training_data", "training_data"),
