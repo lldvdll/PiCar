@@ -34,12 +34,12 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "32_EfficientNetB0_Angle",
-    "DESCRIPTION": "Isolated Angle model on lighter EfficientNet.",
+    "EXPERIMENT_NAME": "33_EfficientNetB0_Both",
+    "DESCRIPTION": "EfficientNet. Output both speed and angle",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
-    "TARGET_VARIABLE": "angle",  # Options: "angle" or "speed"
+    "TARGET_VARIABLE": "both",  # Options: "angle" or "speed" or "both"
     
     "TRAIN_CSV": os.path.join("data", "train_clean_weighted.csv"),
     "TRAIN_IMG_DIR": os.path.join("data", "training_data", "training_data"),
@@ -66,14 +66,14 @@ CONFIG = {
     "AUG_SATURATION_LOWER": 0.8,
     "AUG_SATURATION_UPPER": 1.2,
     "AUG_HUE_DELTA": 0.1,         
-    "AUG_ROTATION_FACTOR": 0.01,
-    "AUG_TILT_FACTOR": 0.01,
+    "AUG_ROTATION_FACTOR": 0.005,
+    "AUG_TILT_FACTOR": 0.005,
     "AUG_CUTOUT_PROB": 0.3,        
     "AUG_CUTOUT_MIN_PIX": 30,      
     "AUG_CUTOUT_MAX_PIX": 80,      
     
     "EPOCHS_WARMUP": 5,             
-    "EPOCHS_FINETUNE": 20, 
+    "EPOCHS_FINETUNE": 15, 
     "LEARNING_RATE_WARMUP": 1e-3,
     "LEARNING_RATE_FINETUNE": 1e-5, 
     "BATCH_SIZE": 16, 
@@ -81,8 +81,9 @@ CONFIG = {
     "BASE_MODEL": "EfficientNetB0", 
     "BASE_WEIGHTS": "imagenet",
     
-    "DENSE_UNITS_1": 256,       
-    "DROPOUT_RATE": 0.4, 
+    "DENSE_UNITS_1": 256, 
+    "DENSE_UNITS_2": 64,       
+    "DROPOUT_RATE": 0.2, 
     "ACTIVATION_HIDDEN": "gelu", 
     "ACTIVATION_OUTPUT": "sigmoid"
 }
@@ -143,15 +144,16 @@ def read_and_decode_image(image_path):
 def apply_augmentations(img, labels):
     if CONFIG.get("AUG_USE_AUGMENTATION", False):
         img = augment_image(img)
+        
+        # --- GRAPH-SAFE MIRRORED HORIZONTAL FLIP ---
         flip_cond = tf.random.uniform([]) < 0.5
         img = tf.cond(flip_cond, lambda: tf.image.flip_left_right(img), lambda: img)
         
-        if CONFIG["TARGET_VARIABLE"] == "angle":
-            new_label = tf.cond(flip_cond, lambda: 1.0 - labels[TARGET_LAYER_NAME], lambda: labels[TARGET_LAYER_NAME])
-        else:
-            new_label = labels[TARGET_LAYER_NAME]
+        # Only invert the angle. Speed stays the same.
+        new_angle = tf.cond(flip_cond, lambda: 1.0 - labels['angle_output'], lambda: labels['angle_output'])
+        new_speed = labels['speed_output']
             
-        labels = {TARGET_LAYER_NAME: new_label}
+        labels = {'angle_output': new_angle, 'speed_output': new_speed}
         img = random_cutout(img, probability=CONFIG["AUG_CUTOUT_PROB"], min_pixels=CONFIG["AUG_CUTOUT_MIN_PIX"], max_pixels=CONFIG["AUG_CUTOUT_MAX_PIX"])
     return img, labels
 
@@ -181,11 +183,17 @@ def prepare_data_pipelines():
     
     def create_ds(dataframe, is_training):
         paths = dataframe['filepath'].values
-        targets = dataframe[CONFIG["TARGET_VARIABLE"]].values.astype(np.float32)
+        # Extract BOTH targets
+        angle_targets = dataframe['angle'].values.astype(np.float32)
+        speed_targets = dataframe['speed'].values.astype(np.float32)
         
-        # Use TARGET_LAYER_NAME to map the dataset target to the correct layer name
-        ds = tf.data.Dataset.from_tensor_slices((paths, targets))
-        ds = ds.map(lambda path, target: (read_and_decode_image(path), {TARGET_LAYER_NAME: target}), num_parallel_calls=tf.data.AUTOTUNE)
+        ds = tf.data.Dataset.from_tensor_slices((paths, angle_targets, speed_targets))
+        # Map them explicitly to the two hardcoded layer names
+        ds = ds.map(lambda path, ang, spd: (
+            read_and_decode_image(path), 
+            {'angle_output': ang, 'speed_output': spd}
+        ), num_parallel_calls=tf.data.AUTOTUNE)
+        
         ds = ds.cache() 
         if is_training:
             ds = ds.shuffle(buffer_size=len(dataframe))  
@@ -197,12 +205,24 @@ def prepare_data_pipelines():
 # --- MODEL COMPILE HELPER ---
 def get_compile_args(lr):
     opt = optimizers.Adam(learning_rate=lr, clipnorm=1.0)
-    if CONFIG["TARGET_VARIABLE"] == "angle":
-        return {"optimizer": opt, "loss": {TARGET_LAYER_NAME: CONFIG["LOSS_FUNCTION"]}, "metrics": {TARGET_LAYER_NAME: ['mse']}}
-    else:
-        loss = "binary_crossentropy" if CONFIG.get("SPEED_AS_CLASSIFICATION") else CONFIG["LOSS_FUNCTION"]
-        metrics = ["accuracy", "mse"] if CONFIG.get("SPEED_AS_CLASSIFICATION") else ["mse"]
-        return {"optimizer": opt, "loss": {TARGET_LAYER_NAME: loss}, "metrics": {TARGET_LAYER_NAME: metrics}}
+    
+    # 1. Routing: Turn heads on or off
+    if CONFIG["TRAINING_MODE"] == "angle":
+        weights = {'angle_output': 1.0, 'speed_output': 0.0}
+    elif CONFIG["TRAINING_MODE"] == "speed":
+        weights = {'angle_output': 0.0, 'speed_output': 1.0}
+    else: # "both"
+        weights = {'angle_output': 1.0, 'speed_output': 1.0}
+
+    # 2. Losses
+    speed_loss = "binary_crossentropy" if CONFIG.get("SPEED_AS_CLASSIFICATION") else CONFIG["LOSS_FUNCTION"]
+    losses = {'angle_output': CONFIG["LOSS_FUNCTION"], 'speed_output': speed_loss}
+    
+    # 3. Metrics (MSE is locked in for both!)
+    speed_metrics = ["accuracy", "mse"] if CONFIG.get("SPEED_AS_CLASSIFICATION") else ["mse"]
+    metrics = {'angle_output': ['mse'], 'speed_output': speed_metrics}
+
+    return {"optimizer": opt, "loss": losses, "loss_weights": weights, "metrics": metrics}
 
 # --- MODEL ARCHITECTURE ---
 def build_initial_model():
@@ -227,10 +247,14 @@ def build_initial_model():
     x = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
     x = layers.Dropout(CONFIG["DROPOUT_RATE"])(x)
     
-    # Use TARGET_LAYER_NAME so Keras inherently logs metrics using this exact string
-    output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name=TARGET_LAYER_NAME)(x)
+    x = layers.Dense(CONFIG["DENSE_UNITS_2"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
+    x = layers.Dropout(CONFIG["DROPOUT_RATE"])(x)
+    
+    # Two heads permanently exist
+    angle_output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name="angle_output")(x)
+    speed_output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name="speed_output")(x)
 
-    model = models.Model(inputs=inputs, outputs=output)
+    model = models.Model(inputs=inputs, outputs=[angle_output, speed_output])
     model.compile(**get_compile_args(CONFIG["LEARNING_RATE_WARMUP"]))
     return model, base_model
 
@@ -296,17 +320,22 @@ def main():
     test_ds = tf.data.Dataset.from_tensor_slices(test_paths)
     test_ds = test_ds.map(read_and_decode_image, num_parallel_calls=tf.data.AUTOTUNE).batch(CONFIG["BATCH_SIZE"])
     
-    predictions = best_model.predict(test_ds).flatten()
+    # The model now returns a list of two arrays
+    preds = best_model.predict(test_ds)
+    angle_preds = preds[0].flatten()
+    speed_preds = preds[1].flatten()
     
-    if CONFIG["TARGET_VARIABLE"] == "angle":
-        if CONFIG.get("SNAP_SUBMISSION") in ["angle", "both"]:
-            predictions = np.round(predictions * 15.0) / 15.0
-        submission_df = pd.DataFrame({'image_id': sub_df['image_id'], 'angle': predictions, 'speed': ""})
-    else:
-        if CONFIG.get("SNAP_SUBMISSION") in ["speed", "both"]:
-            predictions = np.where(predictions > 0.5, 1.0, 0.0)
-        submission_df = pd.DataFrame({'image_id': sub_df['image_id'], 'angle': "", 'speed': predictions})
+    if CONFIG.get("SNAP_SUBMISSION") in ["angle", "both"]:
+        angle_preds = np.round(angle_preds * 15.0) / 15.0
+    if CONFIG.get("SNAP_SUBMISSION") in ["speed", "both"]:
+        speed_preds = np.where(speed_preds > 0.5, 1.0, 0.0)
         
+    submission_df = pd.DataFrame({
+        'image_id': sub_df['image_id'], 
+        'angle': angle_preds, 
+        'speed': speed_preds
+    })
+    
     submission_path = os.path.join(exp_dir, "submission.csv")
     submission_df.to_csv(submission_path, index=False)
     print(f"[SUCCESS] Partial Submission saved to: {submission_path}")

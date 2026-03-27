@@ -53,7 +53,8 @@ Done
 - [29] Loss weighting - use 
 - [30] Switch to ConvNeXtBase - just use a bigger model, focus on optimising for Kaggle instead of trying to simultaneously train for kaggle and car. Just get score down with a big model.
 - [31] See how efficientnet fares. It looked really good before. EfficientNetV2S. Was actually training ConvNetX. Oops!!
-- [32] Actual EfficientNetV2S run. Separate speed and angle, train a different model for each, then combine for submission. Don't snap angles, i don't think it helps. There's one image duplicate in test. Have a look at it then copy it's labels for submission. Potentially keep more background. May 
+- [32] Actual EfficientNetV2S run. Separate speed and angle, train a different model for each, then combine for submission. Don't snap angles, i don't think it helps. There's one image duplicate in test. Have a look at it then copy it's labels for submission. Potentially keep more background. May
+- [33]  EfficientNetB0 run, output both angle and speed
 
 
 - Are training and test actually different images? I should md5 them. Maybe there's an easteregg to just copy the labels across, lol
