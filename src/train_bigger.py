@@ -89,8 +89,6 @@ CONFIG = {
 }
 
 CONFIG["INPUT_SHAPE"] = (CONFIG["IMG_HEIGHT_TARGET"], CONFIG["IMG_WIDTH_TARGET"], CONFIG["CHANNELS"])
-# --- DYNAMIC LAYER NAMING ---
-TARGET_LAYER_NAME = f"{CONFIG['TARGET_VARIABLE']}_output"
 
 # --- DATA PIPELINE ---
 random_rotation_layer = tf.keras.layers.RandomRotation(factor=CONFIG["AUG_ROTATION_FACTOR"], fill_mode='nearest')
@@ -158,7 +156,7 @@ def apply_augmentations(img, labels):
     return img, labels
 
 def prepare_data_pipelines():
-    print(f"[INFO] Loading data for single target: {CONFIG['TARGET_VARIABLE'].upper()}")
+    print(f"[INFO] Loading data for target: {CONFIG['TRAINING_MODE'].upper()}")
     df = pd.read_csv(CONFIG["TRAIN_CSV"])
     
     if CONFIG.get("USE_CLEAN_DATA"):
