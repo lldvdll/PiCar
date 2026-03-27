@@ -34,8 +34,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "35_EfficientNetB0_Speed",
-    "DESCRIPTION": "EfficientNet. Output speed only",
+    "EXPERIMENT_NAME": "36_EfficientNetV2S_Speed",
+    "DESCRIPTION": "EfficientNetV2S. Output speed only, with gradual unfreezing to block 4",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
@@ -78,8 +78,14 @@ CONFIG = {
     "LEARNING_RATE_FINETUNE": 1e-5, 
     "BATCH_SIZE": 16, 
     
-    "BASE_MODEL": "EfficientNetB0", 
+    "BASE_MODEL": "EfficientNetV2S",
     "BASE_WEIGHTS": "imagenet",
+    
+    # --- Progressive Unfreezing Hyperparameters ---
+    "START_UNFREEZE_BLOCK": 6,      # EfficientNetV2S has 6 main blocks. Start at the top.
+    "FREEZE_UP_TO_BLOCK": 4,        # Unfreeze down to block 4. (Blocks 1, 2, 3, and stem stay frozen permanently)
+    "EPOCHS_PER_UNFREEZE_STEP": 4,  # Train for 4 epochs every time we wake up a new block
+    "UNFREEZE_LR_DECAY": 0.9,       # Drop LR by 20% each time we go deeper
     
     "DENSE_UNITS_1": 256, 
     "DENSE_UNITS_2": 64,       
@@ -296,16 +302,57 @@ def main():
     print(f"\n[INFO] --- PHASE 1: WARM-UP ({CONFIG['EPOCHS_WARMUP']} Epochs) ---")
     model.fit(train_ds, validation_data=val_ds, epochs=CONFIG["EPOCHS_WARMUP"], callbacks=callbacks)
     
-    print(f"\n[INFO] --- PHASE 2: UNIVERSAL FINE-TUNING ---")
+# ------------------------------------------------------------------------------------
+    # PHASE 2: PROGRESSIVE UNFREEZING (EfficientNetV2S Blocks)
+    # ------------------------------------------------------------------------------------
+    start_block = CONFIG["START_UNFREEZE_BLOCK"]
+    end_block = CONFIG["FREEZE_UP_TO_BLOCK"]
+    
+    current_lr = CONFIG["LEARNING_RATE_FINETUNE"]
+    current_epoch = CONFIG["EPOCHS_WARMUP"]
+    epochs_per_step = CONFIG["EPOCHS_PER_UNFREEZE_STEP"]
+    lr_decay = CONFIG["UNFREEZE_LR_DECAY"]
+
     base_model.trainable = True 
+    
+    # 1. ALWAYS lock BatchNormalization layers to prevent moving-variance explosions
     for layer in base_model.layers:
         if isinstance(layer, layers.BatchNormalization):
             layer.trainable = False   
+
+    # 2. Iterate backwards from Block 6 down to your target block
+    for target_block in range(start_block, end_block - 1, -1):
+        print(f"\n[INFO] --- PHASE 2: UNFREEZING DOWN TO BLOCK {target_block} ---")
+        print(f"[INFO] Current Learning Rate: {current_lr:.2e}")
+        
+        # In EfficientNetV2S, blocks are named "block1a_", "block2b_", etc.
+        # We freeze any block NUMBER less than our target_block.
+        blocks_to_freeze = [f"block{i}" for i in range(1, target_block)]
+        
+        for layer in base_model.layers:
+            if isinstance(layer, layers.BatchNormalization):
+                continue # Already locked above
+                
+            is_stem = layer.name.startswith("stem")
             
-    model.compile(**get_compile_args(CONFIG["LEARNING_RATE_FINETUNE"]))
-    
-    model.fit(train_ds, validation_data=val_ds, epochs=CONFIG["EPOCHS_WARMUP"] + CONFIG["EPOCHS_FINETUNE"], 
-              initial_epoch=CONFIG["EPOCHS_WARMUP"], callbacks=callbacks)
+            # If the layer is the stem, or starts with one of our frozen block names, lock it.
+            if is_stem or any(layer.name.startswith(b) for b in blocks_to_freeze):
+                layer.trainable = False
+            else:
+                layer.trainable = True
+
+        # 3. We MUST recompile the model every time we change trainable variables
+        model.compile(**get_compile_args(current_lr))
+        
+        target_epoch = current_epoch + epochs_per_step
+        
+        model.fit(train_ds, validation_data=val_ds, 
+                  epochs=target_epoch, 
+                  initial_epoch=current_epoch, 
+                  callbacks=callbacks)
+        
+        current_epoch = target_epoch
+        current_lr *= lr_decay # Soften the learning rate as we go deeper
 
     # ------------------------------------------------------------------------------------
     # DYNAMIC BLANK-COLUMN SUBMISSION GENERATOR
