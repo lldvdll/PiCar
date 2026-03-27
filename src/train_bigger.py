@@ -34,12 +34,12 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "33_EfficientNetB0_Both",
-    "DESCRIPTION": "EfficientNet. Output both speed and angle",
+    "EXPERIMENT_NAME": "35_EfficientNetB0_Speed",
+    "DESCRIPTION": "EfficientNet. Output speed only",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
-    "TRAINING_MODE": "both",  # Options: "angle" or "speed" or "both"
+    "TRAINING_MODE": "speed",  # Options: "angle" or "speed" or "both"
     
     "TRAIN_CSV": os.path.join("data", "train_clean_weighted.csv"),
     "TRAIN_IMG_DIR": os.path.join("data", "training_data", "training_data"),
@@ -238,19 +238,19 @@ def build_initial_model():
     else:
         raise ValueError("Unsupported BASE_MODEL.")
 
-    base_model.trainable = False 
-    x = base_model(inputs, training=False) 
+    base_model.trainable = False  # <--- MUST ADD THIS BACK
+    x = base_model(inputs, training=False)
     x = layers.GlobalAveragePooling2D(name="global_gap")(x)
     
-    x = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
-    x = layers.Dropout(CONFIG["DROPOUT_RATE"])(x)
-    
-    x = layers.Dense(CONFIG["DENSE_UNITS_2"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
-    x = layers.Dropout(CONFIG["DROPOUT_RATE"])(x)
-    
-    # Two heads permanently exist
-    angle_output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name="angle_output")(x)
-    speed_output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name="speed_output")(x)
+    # --- ANGLE BRANCH ---
+    a = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
+    a = layers.Dropout(CONFIG["DROPOUT_RATE"])(a)
+    angle_output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name="angle_output")(a)
+
+    # --- SPEED BRANCH ---
+    s = layers.Dense(CONFIG["DENSE_UNITS_1"], activation=CONFIG["ACTIVATION_HIDDEN"])(x)
+    s = layers.Dropout(CONFIG["DROPOUT_RATE"])(s)
+    speed_output = layers.Dense(1, activation=CONFIG["ACTIVATION_OUTPUT"], name="speed_output")(s)
 
     model = models.Model(inputs=inputs, outputs=[angle_output, speed_output])
     model.compile(**get_compile_args(CONFIG["LEARNING_RATE_WARMUP"]))
