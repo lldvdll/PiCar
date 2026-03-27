@@ -34,8 +34,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "38_V2S_crop_lr_speed",
-    "DESCRIPTION": "Crop bottom, raise learning rate, keep early layers frozen",
+    "EXPERIMENT_NAME": "39_V2S_more_lr_speed",
+    "DESCRIPTION": "Increase learning rates again, freeze 1-3, more warm up epochs.",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
@@ -56,7 +56,7 @@ CONFIG = {
     "IMG_WIDTH_TARGET": 224,  
     "IMG_HEIGHT_TARGET": 224,
     "CROP_TOP_PIXELS": 60, 
-    "CROP_BOTTOM_PIXELS": 40, 
+    "CROP_BOTTOM_PIXELS": 30, 
     "CHANNELS": 3,
     
     "AUG_USE_AUGMENTATION": True,
@@ -72,10 +72,10 @@ CONFIG = {
     "AUG_CUTOUT_MIN_PIX": 30,      
     "AUG_CUTOUT_MAX_PIX": 80,      
     
-    "EPOCHS_WARMUP": 5,             
+    "EPOCHS_WARMUP": 10,             
     "EPOCHS_FINETUNE": 15, 
-    "LEARNING_RATE_WARMUP": 2e-3,
-    "LEARNING_RATE_FINETUNE": 3e-5, 
+    "LEARNING_RATE_WARMUP": 3e-3,
+    "LEARNING_RATE_FINETUNE": 5e-5, 
     "BATCH_SIZE": 16, 
     
     "BASE_MODEL": "EfficientNetV2S",
@@ -83,13 +83,13 @@ CONFIG = {
     
     # --- Progressive Unfreezing Hyperparameters ---
     "START_UNFREEZE_BLOCK": 6,      # EfficientNetV2S has 6 main blocks. Start at the top.
-    "FREEZE_UP_TO_BLOCK": 3,        # Unfreeze down to block 4. (Blocks 1, 2, 3, and stem stay frozen permanently)
-    "EPOCHS_PER_UNFREEZE_STEP": 6,  # Train for 4 epochs every time we wake up a new block
+    "FREEZE_UP_TO_BLOCK": 4,        # Unfreeze down to block 4. (Blocks 1, 2, 3, and stem stay frozen permanently)
+    "EPOCHS_PER_UNFREEZE_STEP": 5,  # Train for 4 epochs every time we wake up a new block
     "UNFREEZE_LR_DECAY": 0.9,       # Drop LR by 20% each time we go deeper
     
     "DENSE_UNITS_1": 256, 
     "DENSE_UNITS_2": 64,       
-    "DROPOUT_RATE": 0.2, 
+    "DROPOUT_RATE": 0.25, 
     "ACTIVATION_HIDDEN": "gelu", 
     "ACTIVATION_OUTPUT": "sigmoid"
 }

@@ -58,6 +58,7 @@ Done
 - [36] EfficientNetV2S. Separate outputs, speed only. Pregressive unfreezing down to block 3
 - [37] EfficientNetV2S. Separate outputs, speed only. Progressive unfreezing down to block 1, more epochs per unfreeze
 - [38] As above. Crop bottom, raise learning rate, keep early layers frozen
+- [39] Even more aggressive learning rates. Freeze one less block. Final run.
 
 - Are training and test actually different images? I should md5 them. Maybe there's an easteregg to just copy the labels across, lol
 - Consider changing speed to binary output and relevance of huber loss. Also consider snapping/binning angle
