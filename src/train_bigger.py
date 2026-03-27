@@ -34,8 +34,8 @@ WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
 CONFIG = {
-    "EXPERIMENT_NAME": "36_EfficientNetV2S_Speed",
-    "DESCRIPTION": "EfficientNetV2S. Output speed only, with gradual unfreezing to block 4",
+    "EXPERIMENT_NAME": "37_EfficientNetV2S_Speed",
+    "DESCRIPTION": "Unfreeze all, longer epochs per progression.",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online", 
     
@@ -83,9 +83,9 @@ CONFIG = {
     
     # --- Progressive Unfreezing Hyperparameters ---
     "START_UNFREEZE_BLOCK": 6,      # EfficientNetV2S has 6 main blocks. Start at the top.
-    "FREEZE_UP_TO_BLOCK": 4,        # Unfreeze down to block 4. (Blocks 1, 2, 3, and stem stay frozen permanently)
-    "EPOCHS_PER_UNFREEZE_STEP": 4,  # Train for 4 epochs every time we wake up a new block
-    "UNFREEZE_LR_DECAY": 0.9,       # Drop LR by 20% each time we go deeper
+    "FREEZE_UP_TO_BLOCK": 1,        # Unfreeze down to block 4. (Blocks 1, 2, 3, and stem stay frozen permanently)
+    "EPOCHS_PER_UNFREEZE_STEP": 8,  # Train for 4 epochs every time we wake up a new block
+    "UNFREEZE_LR_DECAY": 0.85,       # Drop LR by 20% each time we go deeper
     
     "DENSE_UNITS_1": 256, 
     "DENSE_UNITS_2": 64,       
