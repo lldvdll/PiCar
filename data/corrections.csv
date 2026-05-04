@@ -1,6 +1,5 @@
 file,variable,value,reason
 13015,speed,0,
-3018,speed,0,
 76,speed,0,
 5841,speed,0,
 5650,speed,1,
@@ -14,7 +13,6 @@ file,variable,value,reason
 4692,speed,1,
 3775,speed,1,
 1166,angle,0.125,alignment
-8329,angle,0.1875,alignment
 507,angle,0.8125,bend
 9356,angle,0.5,fig8_straight
 3669,angle,0.625,bend
@@ -135,7 +133,6 @@ file,variable,value,reason
 6134,angle,0.5,fig8_straight
 7461,angle,0.125,alignment
 2047,angle,0.6875,alignment
-6340,angle,0.0625,alignment
 4436,angle,0.5,fig8_straight
 2503,angle,0.4375,fig8_straight
 6340,angle,0.0625,alignment
