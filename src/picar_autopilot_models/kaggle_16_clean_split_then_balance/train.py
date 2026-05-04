@@ -323,7 +323,7 @@ def prepare_data_pipelines():
     
     # Balance labels and train/val split
     # Balance first then split - likely overfit as val is not accurate distribution
-    df_balanced = df.sample(n=len(train_df), replace=True, weights='sample_weight', random_state=42)
+    df_balanced = df.sample(n=len(df), replace=True, weights='sample_weight', random_state=42)
     train_df, val_df = train_test_split(df_balanced, test_size=0.2, random_state=42)
     
     def create_ds(dataframe, is_training):
