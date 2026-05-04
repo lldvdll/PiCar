@@ -1,213 +1,367 @@
 filename,reason
-9070.png,Manually flagged in visualizer
-1927.png,Manually flagged in visualizer
-1.png,Corrupt 0-byte file
-10146.png,Corrupt 0-byte file
-1128.png,Corrupt 0-byte file
-11502.png,Corrupt 0-byte file
-11506.png,Corrupt 0-byte file
-12638.png,Corrupt 0-byte file
-12710.png,Corrupt 0-byte file
-13245.png,Corrupt 0-byte file
-13455.png,Corrupt 0-byte file
-135.png,Corrupt 0-byte file
-1612.png,Corrupt 0-byte file
-163.png,Corrupt 0-byte file
-2.png,Corrupt 0-byte file
-2032.png,Corrupt 0-byte file
-2174.png,Corrupt 0-byte file
-2734.png,Corrupt 0-byte file
-2968.png,Corrupt 0-byte file
-3045.png,Corrupt 0-byte file
-3165.png,Corrupt 0-byte file
-3277.png,Corrupt 0-byte file
-3732.png,Corrupt 0-byte file
-4.png,Corrupt 0-byte file
-4664.png,Corrupt 0-byte file
-5768.png,Corrupt 0-byte file
-5794.png,Corrupt 0-byte file
-58.png,Corrupt 0-byte file
-6.png,Corrupt 0-byte file
-6367.png,Corrupt 0-byte file
-7037.png,Corrupt 0-byte file
-71.png,Corrupt 0-byte file
-8501.png,Corrupt 0-byte file
-8603.png,Corrupt 0-byte file
-8949.png,Corrupt 0-byte file
-9420.png,Corrupt 0-byte file
-9630.png,Corrupt 0-byte file
-9657.png,Corrupt 0-byte file
-11350.png,Manually flagged in visualizer
-13599.png,Manually flagged in visualizer
-4336.png,Manually flagged in visualizer
-5131.png,Manually flagged in visualizer
-10561.png,Manually flagged in visualizer
-6841.png,Manually flagged in visualizer
-13300.png,Manually flagged in visualizer
-11130.png,Manually flagged in visualizer
-6993.png,Manually flagged in visualizer
-1322.png,Manually flagged in visualizer
-6493.png,Manually flagged in visualizer
-1489.png,Manually flagged in visualizer
-8488.png,Manually flagged in visualizer
+1.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+2.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+4.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+6.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+45.png,Dean historical
+58.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+71.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+76.png,"mislabel: exact pHash dup of 962,12463 (angle range=0.31)"
+135.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+155.png,"mislabel: exact pHash dup of 3393,13048,13275,13510 (angle range=0.00)"
+163.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+175.png,Dean historical
+199.png,"mislabel: exact pHash dup of 604,6782,9796,13156 (angle range=0.44)"
+204.png,"mislabel: exact pHash dup of 11481,12232 (angle range=0.00)"
+238.png,Dean historical
+312.png,Dean historical
+334.png,"mislabel: exact pHash dup of 3319,5818,9517,12572 (angle range=0.19)"
+392.png,"mislabel: exact pHash dup of 5387,11673,11993,13532 (angle range=0.38)"
+431.png,"mislabel: exact pHash dup of 910,4108,5723 (angle range=0.31)"
+462.png,Dean historical
+604.png,"mislabel: exact pHash dup of 199,6782,9796,13156 (angle range=0.44)"
+749.png,Dean historical
+760.png,Dean historical
+800.png,mislabel: exact pHash dup of 7118 (angle range=0.25)
+835.png,"mislabel: exact pHash dup of 2748,5792,6183 (angle range=0.00)"
+910.png,"mislabel: exact pHash dup of 431,4108,5723 (angle range=0.31)"
+962.png,"mislabel: exact pHash dup of 76,12463 (angle range=0.31)"
+1128.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+1309.png,Dean historical
+1322.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+1341.png,mislabel: exact pHash dup of 2814 (angle range=0.12)
+1371.png,mislabel: exact pHash dup of 11953 (angle range=0.06)
+1374.png,"mislabel: exact pHash dup of 3343,5501 (angle range=0.06)"
+1403.png,Dean historical
+1436.png,Dean historical
+1489.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+1550.png,"mislabel: exact pHash dup of 1961,4230,5200,11615 (angle range=0.38)"
+1562.png,Dean historical
+1584.png,"mislabel: exact pHash dup of 5628,7637 (angle range=0.12)"
+1612.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+1640.png,Dean historical
+1730.png,Dean historical
+1733.png,Dean historical
+1769.png,Dean historical
+1914.png,Dean historical
+1916.png,"mislabel: exact pHash dup of 11764,12417,14249 (angle range=0.06)"
+1927.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+1941.png,"mislabel: exact pHash dup of 2396,2894,3775,7451,13615 (angle range=0.00)"
+1961.png,"mislabel: exact pHash dup of 1550,4230,5200,11615 (angle range=0.38)"
+2007.png,Dean historical
+2013.png,"mislabel: exact pHash dup of 9369,10764 (angle range=0.06)"
+2031.png,"mislabel: exact pHash dup of 10744,12281,14277 (angle range=0.06)"
+2032.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+2069.png,Dean historical
+2115.png,Dean historical
+2150.png,Dean historical
+2174.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+2207.png,Dean historical
+2209.png,"mislabel: exact pHash dup of 9113,10475,12027 (angle range=0.19)"
+2218.png,mislabel: exact pHash dup of 2640 (angle range=1.00)
+2287.png,Dean historical
+2352.png,Dean historical
+2380.png,Dean historical
+2396.png,"mislabel: exact pHash dup of 1941,2894,3775,7451,13615 (angle range=0.00)"
+2429.png,mislabel: exact pHash dup of 5539 (angle range=0.00)
+2457.png,Dean historical
+2473.png,low_edges | low_edges
+2565.png,Dean historical
+2640.png,mislabel: exact pHash dup of 2218 (angle range=1.00)
+2720.png,Dean historical
+2734.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+2745.png,mislabel: exact pHash dup of 13991 (angle range=0.00)
+2748.png,"mislabel: exact pHash dup of 835,5792,6183 (angle range=0.00)"
+2769.png,Dean historical
+2793.png,mislabel: exact pHash dup of 4521 (angle range=0.19)
+2802.png,Dean historical
+2814.png,mislabel: exact pHash dup of 1341 (angle range=0.12)
 2878.png,Manually flagged in visualizer
-11270.png
-8020.png
-8712.png
-2352.png
-14136.png
-1403.png
-4826.png
-7881.png
-5535.png
-7828.png
-10349.png
-8292.png
-9016.png
-4634.png
-6386.png
-11943.png
-6257.png
-10832.png
-12313.png
-1733.png
-6478.png
-6825.png
-4500.png
-13817.png
-4064.png
-3456.png
-2069.png
-10745.png
-7848.png
-3305.png
-8558.png
-5467.png
-3545.png
-4527.png
-312.png
-6225.png
-13521.png
-4821.png
-10497.png
-12892.png
-13780.png
-5567.png
-12099.png
-175.png
-10963.png
-10719.png
-12168.png
-3470.png
-10563.png
-13670.png
-13623.png
-13827.png
-13923.png
-7088.png
-10130.png
-5286.png
-2287.png
-238.png
-8210.png
-2769.png
-3038.png
-3321.png
-9977.png
-1309.png
-2007.png
-14071.png
-2115.png
-5950.png
-6232.png
-2802.png
-1730.png
-10886.png
-4192.png
-10185.png
-7475.png
-11776.png
-1562.png
-4166.png
-5073.png
-12294.png
-2884.png
-4385.png
-3855.png
-14079.png
-5331.png
-13302.png
-7460.png
-2891.png
-4836.png
-1640.png
-13305.png
-10817.png
-13365.png
-10256.png
-3901.png
-14071.png
-2720.png
-13872.png
-8285.png
-3340.png
-4243.png
-7854.png,duplicate md5
-9586.png,duplicate md5
-4850.png
-6065.png
-9447.png
-13789.png
-3194.png
-2150.png
-6873.png
-5758.png
-10079.png
-13926.png
-10775.png
-13276.png
-1769.png
-7683.png
-9965.png
-1436.png
-3832.png
-12329.png
-2565.png
-10126.png
-5022.png
-5069.png
-9691.png
-3721.png
-10094.png
-6154.png
-2457.png
-45.png
-9434.png
-5770.png
-1914.png
-8534.png
-11211.png
-12805.png
-3720.png
-11970.png
-6594.png
-4019.png
-749.png
-2380.png
-8530.png
-2207.png
-5105.png
-3506.png
-13278.png
-10115.png
-11221.png
-7836.png
-7487.png
-760.png
-12120.png
-14339.png
-9730.png
-6722.png
-7724.png
-462.png
-7794.png
+2884.png,Dean historical
+2891.png,Dean historical
+2894.png,"mislabel: exact pHash dup of 1941,2396,3775,7451,13615 (angle range=0.00)"
+2968.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+3038.png,Dean historical
+3045.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+3091.png,mislabel: exact pHash dup of 8819 (angle range=0.25)
+3165.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+3194.png,Dean historical
+3268.png,mislabel: exact pHash dup of 14132 (angle range=0.06)
+3277.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+3305.png,Dean historical
+3310.png,"mislabel: exact pHash dup of 4964,7933,9173,11085 (angle range=0.25)"
+3319.png,"mislabel: exact pHash dup of 334,5818,9517,12572 (angle range=0.19)"
+3321.png,Dean historical
+3340.png,Dean historical
+3343.png,"mislabel: exact pHash dup of 1374,5501 (angle range=0.06)"
+3393.png,"mislabel: exact pHash dup of 155,13048,13275,13510 (angle range=0.00)"
+3456.png,Dean historical
+3470.png,Dean historical
+3506.png,Dean historical
+3545.png,Dean historical
+3581.png,"mislabel: exact pHash dup of 9169,10682 (angle range=0.00)"
+3667.png,"mislabel: exact pHash dup of 6808,9075,13015 (angle range=0.12)"
+3720.png,Dean historical
+3721.png,Dean historical
+3732.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+3775.png,"mislabel: exact pHash dup of 1941,2396,2894,7451,13615 (angle range=0.00)"
+3832.png,Dean historical
+3855.png,Dean historical
+3885.png,mislabel: exact pHash dup of 10940 (angle range=0.06)
+3901.png,"low_variance,too_bright,no_dark_lines | low_variance,too_bright,no_dark_lines | Dean historical | low_variance"
+4019.png,Dean historical
+4064.png,Dean historical
+4108.png,"mislabel: exact pHash dup of 431,910,5723 (angle range=0.31)"
+4163.png,mislabel: exact pHash dup of 4806 (angle range=0.25)
+4166.png,Dean historical
+4192.png,Dean historical
+4230.png,"mislabel: exact pHash dup of 1550,1961,5200,11615 (angle range=0.38)"
+4243.png,Dean historical
+4336.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+4370.png,"mislabel: exact pHash dup of 5258,8946,9099,9688 (angle range=0.38)"
+4385.png,Dean historical
+4500.png,Dean historical
+4521.png,mislabel: exact pHash dup of 2793 (angle range=0.19)
+4527.png,Dean historical
+4634.png,Dean historical
+4664.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+4737.png,"low_variance,too_bright,no_dark_lines,blurry | low_variance,too_bright,no_dark_lines,blurry | low_variance,blurry"
+4772.png,mislabel: exact pHash dup of 11871 (angle range=0.25)
+4806.png,mislabel: exact pHash dup of 4163 (angle range=0.25)
+4821.png,Dean historical
+4826.png,Dean historical
+4836.png,Dean historical
+4850.png,Dean historical
+4882.png,mislabel: exact pHash dup of 5873 (angle range=0.25)
+4900.png,mislabel: exact pHash dup of 8516 (angle range=0.00)
+4964.png,"mislabel: exact pHash dup of 3310,7933,9173,11085 (angle range=0.25)"
+5022.png,Dean historical
+5039.png,mislabel: exact pHash dup of 7823 (angle range=0.44)
+5069.png,Dean historical
+5073.png,Dean historical
+5105.png,Dean historical
+5131.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+5200.png,"mislabel: exact pHash dup of 1550,1961,4230,11615 (angle range=0.38)"
+5258.png,"mislabel: exact pHash dup of 4370,8946,9099,9688 (angle range=0.38)"
+5286.png,Dean historical
+5293.png,"mislabel: exact pHash dup of 10023,13298,13463 (angle range=0.38)"
+5320.png,"mislabel: exact pHash dup of 5519,5809,5901,8185,10505,11761 (angle range=0.00)"
+5331.png,Dean historical
+5387.png,"mislabel: exact pHash dup of 392,11673,11993,13532 (angle range=0.38)"
+5467.png,Dean historical
+5501.png,"mislabel: exact pHash dup of 1374,3343 (angle range=0.06)"
+5519.png,"mislabel: exact pHash dup of 5320,5809,5901,8185,10505,11761 (angle range=0.00)"
+5535.png,Dean historical
+5539.png,mislabel: exact pHash dup of 2429 (angle range=0.00)
+5567.png,Dean historical
+5628.png,"mislabel: exact pHash dup of 1584,7637 (angle range=0.12)"
+5723.png,"mislabel: exact pHash dup of 431,910,4108 (angle range=0.31)"
+5758.png,Dean historical
+5768.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+5770.png,Dean historical
+5792.png,"mislabel: exact pHash dup of 835,2748,6183 (angle range=0.00)"
+5794.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+5809.png,"mislabel: exact pHash dup of 5320,5519,5901,8185,10505,11761 (angle range=0.00)"
+5818.png,"mislabel: exact pHash dup of 334,3319,9517,12572 (angle range=0.19)"
+5873.png,mislabel: exact pHash dup of 4882 (angle range=0.25)
+5901.png,"mislabel: exact pHash dup of 5320,5519,5809,8185,10505,11761 (angle range=0.00)"
+5950.png,Dean historical
+5958.png,"mislabel: exact pHash dup of 10949,12795 (angle range=0.19)"
+6065.png,Dean historical
+6134.png,mislabel: exact pHash dup of 8315 (angle range=0.31)
+6154.png,Dean historical
+6183.png,"mislabel: exact pHash dup of 835,2748,5792 (angle range=0.00)"
+6225.png,Dean historical
+6232.png,Dean historical
+6242.png,mislabel: exact pHash dup of 13757 (angle range=0.62)
+6257.png,Dean historical
+6367.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+6386.png,Dean historical
+6478.png,"low_variance,too_bright,low_edges,no_dark_lines,blurry | low_variance,too_bright,low_edges,no_dark_lines,blurry | Dean historical | low_variance,blurry,no_track"
+6493.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+6594.png,Dean historical
+6722.png,Dean historical
+6782.png,"mislabel: exact pHash dup of 199,604,9796,13156 (angle range=0.44)"
+6808.png,"mislabel: exact pHash dup of 3667,9075,13015 (angle range=0.12)"
+6825.png,Dean historical
+6841.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+6873.png,Dean historical
+6993.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+7028.png,mislabel: exact pHash dup of 13130 (angle range=0.25)
+7037.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+7088.png,Dean historical
+7118.png,mislabel: exact pHash dup of 800 (angle range=0.25)
+7142.png,"mislabel: exact pHash dup of 9305,10920 (angle range=0.38)"
+7279.png,mislabel: exact pHash dup of 9065 (angle range=0.25)
+7430.png,mislabel: exact pHash dup of 10693 (angle range=0.31)
+7451.png,"mislabel: exact pHash dup of 1941,2396,2894,3775,13615 (angle range=0.00)"
+7460.png,Dean historical
+7475.png,Dean historical
+7487.png,Dean historical
+7637.png,"mislabel: exact pHash dup of 1584,5628 (angle range=0.12)"
+7683.png,Dean historical
+7724.png,Dean historical
+7794.png,Dean historical
+7823.png,mislabel: exact pHash dup of 5039 (angle range=0.44)
+7828.png,Dean historical
+7836.png,Dean historical
+7848.png,Dean historical
+7854.png,duplicate md5 | duplicate of 11158.png | duplicate of 11158.png | duplicate md5 | duplicate of 11158.png
+7881.png,Dean historical
+7933.png,"mislabel: exact pHash dup of 3310,4964,9173,11085 (angle range=0.25)"
+8020.png,Dean historical
+8152.png,mislabel: exact pHash dup of 12690 (angle range=0.25)
+8185.png,"mislabel: exact pHash dup of 5320,5519,5809,5901,10505,11761 (angle range=0.00)"
+8210.png,Dean historical
+8285.png,Dean historical
+8292.png,Dean historical
+8315.png,mislabel: exact pHash dup of 6134 (angle range=0.31)
+8488.png,Manually flagged in visualizer
+8501.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+8516.png,mislabel: exact pHash dup of 4900 (angle range=0.00)
+8530.png,Dean historical
+8534.png,Dean historical
+8558.png,Dean historical
+8603.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+8712.png,Dean historical
+8737.png,mislabel: exact pHash dup of 10077 (angle range=0.38)
+8819.png,mislabel: exact pHash dup of 3091 (angle range=0.25)
+8946.png,"mislabel: exact pHash dup of 4370,5258,9099,9688 (angle range=0.38)"
+8949.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+9016.png,Dean historical
+9065.png,mislabel: exact pHash dup of 7279 (angle range=0.25)
+9070.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+9075.png,"mislabel: exact pHash dup of 3667,6808,13015 (angle range=0.12)"
+9099.png,"mislabel: exact pHash dup of 4370,5258,8946,9688 (angle range=0.38)"
+9113.png,"mislabel: exact pHash dup of 2209,10475,12027 (angle range=0.19)"
+9169.png,"mislabel: exact pHash dup of 3581,10682 (angle range=0.00)"
+9173.png,"mislabel: exact pHash dup of 3310,4964,7933,11085 (angle range=0.25)"
+9305.png,"mislabel: exact pHash dup of 7142,10920 (angle range=0.38)"
+9369.png,"mislabel: exact pHash dup of 2013,10764 (angle range=0.06)"
+9420.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+9434.png,Dean historical
+9447.png,Dean historical
+9517.png,"mislabel: exact pHash dup of 334,3319,5818,12572 (angle range=0.19)"
+9552.png,mislabel: exact pHash dup of 10334 (angle range=0.25)
+9586.png,duplicate md5 | duplicate of 13939.png | duplicate of 13939.png | duplicate md5 | duplicate of 13939.png
+9630.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+9657.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+9688.png,"mislabel: exact pHash dup of 4370,5258,8946,9099 (angle range=0.38)"
+9691.png,Dean historical
+9730.png,Dean historical
+9740.png,mislabel: exact pHash dup of 13160 (angle range=0.44)
+9796.png,"mislabel: exact pHash dup of 199,604,6782,13156 (angle range=0.44)"
+9965.png,Dean historical
+9977.png,Dean historical
+9999.png,mislabel: exact pHash dup of 12339 (angle range=0.38)
+10023.png,"mislabel: exact pHash dup of 5293,13298,13463 (angle range=0.38)"
+10077.png,mislabel: exact pHash dup of 8737 (angle range=0.38)
+10079.png,Dean historical
+10094.png,Dean historical
+10115.png,Dean historical
+10126.png,Dean historical
+10130.png,Dean historical
+10146.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+10185.png,Dean historical
+10256.png,Dean historical
+10334.png,mislabel: exact pHash dup of 9552 (angle range=0.25)
+10349.png,Dean historical
+10475.png,"mislabel: exact pHash dup of 2209,9113,12027 (angle range=0.19)"
+10497.png,Dean historical
+10505.png,"mislabel: exact pHash dup of 5320,5519,5809,5901,8185,11761 (angle range=0.00)"
+10561.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+10563.png,Dean historical
+10682.png,"mislabel: exact pHash dup of 3581,9169 (angle range=0.00)"
+10693.png,mislabel: exact pHash dup of 7430 (angle range=0.31)
+10719.png,Dean historical
+10744.png,"mislabel: exact pHash dup of 2031,12281,14277 (angle range=0.06)"
+10745.png,Dean historical
+10764.png,"mislabel: exact pHash dup of 2013,9369 (angle range=0.06)"
+10775.png,Dean historical
+10817.png,Dean historical
+10832.png,Dean historical
+10886.png,Dean historical
+10920.png,"mislabel: exact pHash dup of 7142,9305 (angle range=0.38)"
+10940.png,mislabel: exact pHash dup of 3885 (angle range=0.06)
+10949.png,"mislabel: exact pHash dup of 5958,12795 (angle range=0.19)"
+10963.png,Dean historical
+11085.png,"mislabel: exact pHash dup of 3310,4964,7933,9173 (angle range=0.25)"
+11130.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+11211.png,Dean historical
+11221.png,Dean historical
+11270.png,Dean historical
+11350.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+11481.png,"mislabel: exact pHash dup of 204,12232 (angle range=0.00)"
+11502.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+11506.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+11615.png,"mislabel: exact pHash dup of 1550,1961,4230,5200 (angle range=0.38)"
+11673.png,"mislabel: exact pHash dup of 392,5387,11993,13532 (angle range=0.38)"
+11761.png,"mislabel: exact pHash dup of 5320,5519,5809,5901,8185,10505 (angle range=0.00)"
+11764.png,"mislabel: exact pHash dup of 1916,12417,14249 (angle range=0.06)"
+11776.png,Dean historical
+11871.png,mislabel: exact pHash dup of 4772 (angle range=0.25)
+11943.png,Dean historical
+11953.png,mislabel: exact pHash dup of 1371 (angle range=0.06)
+11970.png,Dean historical
+11993.png,"mislabel: exact pHash dup of 392,5387,11673,13532 (angle range=0.38)"
+12027.png,"mislabel: exact pHash dup of 2209,9113,10475 (angle range=0.19)"
+12040.png,mislabel: exact pHash dup of 14288 (angle range=0.25)
+12099.png,Dean historical
+12120.png,Dean historical
+12168.png,Dean historical
+12232.png,"mislabel: exact pHash dup of 204,11481 (angle range=0.00)"
+12281.png,"mislabel: exact pHash dup of 2031,10744,14277 (angle range=0.06)"
+12294.png,Dean historical
+12313.png,Dean historical
+12329.png,Dean historical
+12339.png,mislabel: exact pHash dup of 9999 (angle range=0.38)
+12417.png,"mislabel: exact pHash dup of 1916,11764,14249 (angle range=0.06)"
+12463.png,"mislabel: exact pHash dup of 76,962 (angle range=0.31)"
+12572.png,"mislabel: exact pHash dup of 334,3319,5818,9517 (angle range=0.19)"
+12638.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+12690.png,mislabel: exact pHash dup of 8152 (angle range=0.25)
+12710.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+12795.png,"mislabel: exact pHash dup of 5958,10949 (angle range=0.19)"
+12805.png,Dean historical
+12892.png,Dean historical
+13015.png,"mislabel: exact pHash dup of 3667,6808,9075 (angle range=0.12)"
+13048.png,"mislabel: exact pHash dup of 155,3393,13275,13510 (angle range=0.00)"
+13130.png,mislabel: exact pHash dup of 7028 (angle range=0.25)
+13156.png,"mislabel: exact pHash dup of 199,604,6782,9796 (angle range=0.44)"
+13160.png,mislabel: exact pHash dup of 9740 (angle range=0.44)
+13245.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+13275.png,"mislabel: exact pHash dup of 155,3393,13048,13510 (angle range=0.00)"
+13276.png,Dean historical
+13278.png,Dean historical
+13298.png,"mislabel: exact pHash dup of 5293,10023,13463 (angle range=0.38)"
+13300.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+13302.png,Dean historical
+13305.png,Dean historical
+13365.png,Dean historical
+13408.png,too_dark | too_dark | too_dark
+13455.png,Corrupt 0-byte file | Corrupt 0-byte file | 0-byte corrupt | 0-byte corrupt | Corrupt 0-byte file | 0-byte corrupt
+13463.png,"mislabel: exact pHash dup of 5293,10023,13298 (angle range=0.38)"
+13510.png,"mislabel: exact pHash dup of 155,3393,13048,13275 (angle range=0.00)"
+13521.png,Dean historical
+13532.png,"mislabel: exact pHash dup of 392,5387,11673,11993 (angle range=0.38)"
+13599.png,Manually flagged in visualizer | Manually flagged in visualizer | Manually flagged in visualizer
+13615.png,"mislabel: exact pHash dup of 1941,2396,2894,3775,7451 (angle range=0.00)"
+13623.png,Dean historical
+13670.png,Dean historical
+13757.png,mislabel: exact pHash dup of 6242 (angle range=0.62)
+13780.png,Dean historical
+13789.png,Dean historical
+13817.png,Dean historical
+13827.png,Dean historical
+13872.png,Dean historical
+13923.png,Dean historical
+13926.png,Dean historical
+13991.png,mislabel: exact pHash dup of 2745 (angle range=0.00)
+14071.png,Dean historical
+14079.png,Dean historical
+14132.png,mislabel: exact pHash dup of 3268 (angle range=0.06)
+14136.png,Dean historical
+14249.png,"mislabel: exact pHash dup of 1916,11764,12417 (angle range=0.06)"
+14277.png,"mislabel: exact pHash dup of 2031,10744,12281 (angle range=0.06)"
+14288.png,mislabel: exact pHash dup of 12040 (angle range=0.25)
+14339.png,Dean historical
