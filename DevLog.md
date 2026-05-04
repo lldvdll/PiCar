@@ -59,6 +59,17 @@ Done
 - [37] EfficientNetV2S. Separate outputs, speed only. Progressive unfreezing down to block 1, more epochs per unfreeze
 - [38] As above. Crop bottom, raise learning rate, keep early layers frozen
 - [39] Even more aggressive learning rates. Freeze one less block. Final run.
+KAGGLE SUBMISSION
+LIVE CAR TESTING BEGINS
+16 gives best on track peformance. Using it as base training params/model for all below
+16: Best so far. Good straight line, gentle alignment correction, right turning bias on T, best on oval turns so far 75%?, turns right on the figure 8 junction and circles the small loop, stops for all obstacles
+Training moved into src/picar_autopilot_models where each model has it's own folder and model.py for easy transfer to picar.
+Note: model logs and weights still output to experiments/experiment_name. Restarted numbering from 50
+
+- [50] Added data corrections and removal of junk images. Also added early stopping (patience=20) and balanced only training set - validation on accurate data distribution. Stopped at 80 epochs with poor speed validation. Untested on track
+- [51] As above, This time kept the old incorrect balance then split. Also early stopped at 80. Better speed validation
+- [52] As above but without the early stopping at all.
+
 
 - Are training and test actually different images? I should md5 them. Maybe there's an easteregg to just copy the labels across, lol
 - Consider changing speed to binary output and relevance of huber loss. Also consider snapping/binning angle
