@@ -31,6 +31,10 @@ class LayerScale(tf.keras.layers.Layer):
 # 2. IMPORT PREPROCESSING FROM TRAINING SCRIPT
 from train_bigger import CONFIG, validate_image_paths, read_and_decode_image
 
+# --- FIX: OVERRIDE THE SLOW CPU EMULATION ---
+tf.keras.mixed_precision.set_global_policy('float32')
+print("[INFO] Reverted to float32 for fast local CPU inference.")
+
 def main():
     exp_dir = os.path.join("experiments", CONFIG["EXPERIMENT_NAME"])
     model_path = os.path.join(exp_dir, "best_model.h5")
