@@ -455,7 +455,7 @@ def main():
     
     callbacks = [
         WandbMetricsLogger(),
-        ModelCheckpoint(filepath=os.path.join(exp_dir, "best_model.h5"), monitor="val_loss", save_best_only=True, verbose=1)
+        ModelCheckpoint(filepath=os.path.join(exp_dir, "best_model.h5"), monitor="val_loss", save_best_only=True, verbose=1),
         EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True, verbose=1),
     ]
     
