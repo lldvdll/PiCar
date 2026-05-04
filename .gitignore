@@ -7,3 +7,5 @@ experiments/*/wandb
 project_overview.md
 note.md
 pi_dump
+experiments/30_ConvNeXtBase/best_model.h5
+experiments/31_EfficientNetV2S/best_model.h5
