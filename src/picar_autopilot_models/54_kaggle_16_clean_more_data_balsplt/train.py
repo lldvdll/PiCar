@@ -384,7 +384,7 @@ def prepare_data_pipelines():
     # Balance labels and train/val split
     if CONFIG.get("BALANCE_VALIDATION", False):
         # Balance then split. Validation will be under-represented
-        balanced_df = train_df.sample(n=len(train_df), replace=True, weights='sample_weight', random_state=42)
+        balanced_df = df.sample(n=len(df), replace=True, weights='sample_weight', random_state=42)
         train_df, val_df = train_test_split(balanced_df, test_size=0.2, random_state=42)
     else:
         # Split first to validate on true distribution, but train for edge cases
