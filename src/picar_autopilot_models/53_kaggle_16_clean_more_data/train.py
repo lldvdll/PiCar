@@ -45,7 +45,7 @@ PROJECT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".
 
 CONFIG = {
     "EXPERIMENT_NAME": "53_kaggle_16_clean_more_data",
-    "DESCRIPTION": "Parameters and architecture from 16, but using cleaned and corrected dataset, adding more data found on car. Split then balance, early stopping patience=20",
+    "DESCRIPTION": "Parameters and architecture from 16, but using cleaned and corrected dataset, adding more data found on car. Split then balance, no early stopping",
     "OVERWRITE_EXPERIMENT": True,
     "LOGGING_MODE": "online",  # From online, offline, and disabled
     
@@ -515,7 +515,7 @@ def main():
     callbacks = [
         WandbMetricsLogger(),
         ModelCheckpoint(filepath=os.path.join(exp_dir, "best_model.h5"), monitor="val_loss", save_best_only=True, verbose=1),
-        EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True, verbose=1),
+        # EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True, verbose=1),
     ]
     
     start_time = time.time()
