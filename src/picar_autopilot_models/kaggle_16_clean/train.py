@@ -40,7 +40,7 @@ else:
 WANDB_PROJECT = "PiCar"
 WANDB_ENTITY = "lpxdv2-university-of-nottingham"  
 
-PROJECT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "..")
+PROJECT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
 
 CONFIG = {
     "EXPERIMENT_NAME": "50_kaggle_16_clean",
