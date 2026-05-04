@@ -4,6 +4,7 @@ data/picar_data_grab
 data/8
 data/C
 data/T
+data/signs
 figures/
 results/
 experiments/*/wandb
