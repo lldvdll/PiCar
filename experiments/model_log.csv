@@ -30,3 +30,5 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
 2026-03-25 09:27:18,28_binary_speed,upm1bbzq,42,0.10494,Binary classifier for speed. Also unfreeze more
 2026-05-04 10:11:28,50_kaggle_16_clean,8unohdnt,63,0.02216,"Parameters and architecture from 16, but using cleaned and corrected dataset"
 2026-05-04 10:44:54,51_kaggle_16_clean_split_then_balance,uosfk59h,58,0.00922,"Parameters and architecture from 16, but using cleaned and corrected dataset. This time split first then balance the data, as previously but incorrectly."
+2026-05-04 11:52:38,52_kaggle_16_split_then_bal_nostop,ongrf6j8,154,0.00571,"Parameters and architecture from 16, but using cleaned and corrected dataset. This time split first then balance the data, as previously but incorrectly. No early stopping"
+2026-05-04 13:17:42,53_kaggle_16_clean_more_data,ivcvv562,195,0.02008,"Parameters and architecture from 16, but using cleaned and corrected dataset, adding more data found on car. Split then balance, no early stopping"
