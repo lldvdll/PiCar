@@ -1,5 +1,6 @@
 data/test_data
 data/training_data
+data/picar_data_grab
 figures/
 results/
 experiments/*/wandb
