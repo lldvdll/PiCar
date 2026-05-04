@@ -5,3 +5,4 @@ results/
 experiments/*/wandb
 *__pycache__*
 experiments/*/best_model.h5
+pi_dump
