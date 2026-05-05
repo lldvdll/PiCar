@@ -5,6 +5,7 @@ data/8
 data/C
 data/T
 data/signs
+data/57_tpu_rec*
 figures/
 results/
 experiments/*/wandb
@@ -14,3 +15,4 @@ note.md
 pi_dump
 experiments/30_ConvNeXtBase/best_model.h5
 experiments/31_EfficientNetV2S/best_model.h5
+.claude*
