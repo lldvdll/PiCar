@@ -1,3 +1,17 @@
 Model,Car,TPU,Time,Oval inside,Oval outside,Oval obstacles,Oval comments,Figure 8 turn,Figure 8 junction,Figure 8 obstacles,Figure 8 comments,T straight,T junction,T obstacles,T comments
 55,2,1,11:30:00,1,1,2,Inside turns too early. Crosses lines – outside to inside. Stops early for obstacles.,2,1,2,Can’t correct if it gets the junction wrong. Crosses junction from inside. Jittery obstacle stop,3,1,2,"Always turns right. Jittery stop, 2ft"
 60,2,1,11:45:00,0,2,3,"Outside sometimes corners early to inside but corrects. Inside turns early, tries to correct, breks down.",1,1,1,"Turns too early, crossing lane on outside. If appraoching straight, jittery stops",3,1,2,"Always turns right, turns early"
+Kaggle_14,,,,,,,,,,,,,,,
+Kaggle_16,,,,,,,,,,,,,,,
+51,,,,,,,,,,,,,,,
+52,,,,,,,,,,,,,,,
+54,,,,,,,,,,,,,,,
+55,,,,,,,,,,,,,,,
+56,,,,,,,,,,,,,,,
+61,,,,,,,,,,,,,,,
+62,,,,,,,,,,,,,,,
+63,,,,,,,,,,,,,,,
+64,,,,,,,,,,,,,,,
+65,,,,,,,,,,,,,,,
+66,,,,,,,,,,,,,,,
+67,,,,,,,,,,,,,,,
