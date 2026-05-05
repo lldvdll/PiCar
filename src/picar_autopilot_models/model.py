@@ -23,7 +23,7 @@ def record_state(img, speed, angle):
     model_name = os.path.basename(model_dir)
     # Check if "recordings" directory exists or create
     # Check if model name (parent folder of model.py) exists or create
-    save_dir = os.path.join(os.path.expanduser("~"), "recordings", model_name)
+    save_dir = os.path.join(os.path.expanduser("~"), "recordings", model_name, SCENARIO)
     os.makedirs(save_dir, exist_ok=True)
     # Get timestamp
     timestamp_ms = int(time.time() * 1000)
