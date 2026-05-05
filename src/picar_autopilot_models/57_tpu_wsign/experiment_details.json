@@ -1,0 +1,9 @@
+{
+    "EXPERIMENT_NAME": "57_kaggle_16_keep12_unfreeze4_tpu",
+    "DESCRIPTION": "Experiment 57 \u2014 crop top 120, keep block 12, unfreeze block 4",
+    "IMG_WIDTH_TARGET": 160,
+    "IMG_HEIGHT_TARGET": 96,
+    "CROP_TOP_PIXELS": 120,
+    "CROP_BOTTOM_PIXELS": 30,
+    "CHANNELS": 3
+}
