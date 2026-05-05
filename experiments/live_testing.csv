@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Model,Car,TPU,Time,Oval inside,Oval outside,Oval obstacles,Oval comments,Figure 8 turn,Figure 8 junction,Figure 8 obstacles,Figure 8 comments,T straight,T junction,T obstacles,T comments
 55,2,1,11:30:00,1,1,2,Inside turns too early. Crosses lines – outside to inside. Stops early for obstacles.,2,1,2,Can’t correct if it gets the junction wrong. Crosses junction from inside. Jittery obstacle stop,3,1,2,"Always turns right. Jittery stop, 2ft"
 60,2,1,11:45:00,0,2,3,"Outside sometimes corners early to inside but corrects. Inside turns early, tries to correct, breks down.",1,1,1,"Turns too early, crossing lane on outside. If appraoching straight, jittery stops",3,1,2,"Always turns right, turns early"
@@ -15,3 +16,11 @@ Kaggle_16,,,,,,,,,,,,,,,
 65,,,,,,,,,,,,,,,
 66,,,,,,,,,,,,,,,
 67,,,,,,,,,,,,,,,
+=======
+Model,Car,TPU,Time,Oval inside,Oval outside,Oval obstacles,Oval comments,Figure 8 turn,Figure 8 junction,Figure 8 obstacles,Figure 8 comments,T straight,T junction,T obstacles,T comments
+55,2,1,11:30:00,1,1,3,Inside turns too early. Crosses lines – outside to inside.,2,1,2,Can’t correct if it gets the junction wrong. Crosses junction from inside. Jittery obstacle stop,3,1,2,"Always turns right. Jittery stop, 2ft"
+60,2,1,11:45:00,0,2,3,"Outside sometimes corners early to inside but corrects. Inside turns early, tries to correct, breks down.",1,1,1,"Turns too early, crossing lane on outside. If appraoching straight, jittery stops",3,1,2,"Always turns right, turns early"
+62,2,0,13:30,0,2,3,"doing well on outside, very occassionally cross the track line; it goes off track when turnning in the innerside - require sharper turnning",1,1,1,require shaper turnning when approaching junction to see junction properly to detect obstacles and lanes,3,1,3,Always turns right; it drive into the middle dash line and stops
+63,2,0,13:50,0,0,3,go off track after turning (require sharper turning),1,0,0,generally bad with figure 8 track even with manual correction,/,/,/,/
+64,2,0,14:10,0,0,3,Outside: taking short cuts; Inside: it requires sharper turning as observed before,1,0,,it is doing circles rather than going staright,3,0,3,"Always turns right, turns early"
+>>>>>>> b67958d (Update live testing log)
