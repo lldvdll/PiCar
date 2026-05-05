@@ -16,6 +16,7 @@ SCENARIO = 'fig_8_junction'
 CROP_TOP_PIXELS = 120
 CROP_BOTTOM_PIXELS = 30
 MAX_SPEED = 35  # or 50
+OUTPUT_EXT = 'png'  # or jpg if png is too slow
 
 def record_state(img, speed, angle):
     # Get model name from directory (location of model.py)
@@ -27,10 +28,16 @@ def record_state(img, speed, angle):
     os.makedirs(save_dir, exist_ok=True)
     # Get timestamp
     timestamp_ms = int(time.time() * 1000)
-    # filename = timestamp + str(angle) + str(speed) + "".png"
-    filename = f"{timestamp_ms}_{int(angle)}_{int(speed)}.png"
-    # Save with to location - ~/recordings/model_name/timestamp_angle_speed.png
-    cv2.imwrite(os.path.join(save_dir, filename), img)
+    
+    if OUTPUT_EXT == 'png':
+        # filename = timestamp + str(angle) + str(speed) + "".png"
+        filename = f"{timestamp_ms}_{int(angle)}_{int(speed)}.png"
+        # Save with to location - ~/recordings/model_name/timestamp_angle_speed.png
+        cv2.imwrite(os.path.join(save_dir, filename), img)
+    elif OUTPUT_EXT == 'jpg':
+        # filename = timestamp + str(angle) + str(speed) + "".jpg"
+        filename = f"{timestamp_ms}_{int(angle)}_{int(speed)}.jpg"
+        cv2.imwrite(os.path.join(save_dir, filename), img, [cv2.IMWRITE_JPEG_QUALITY, 90])
     
 
 class Model:
@@ -84,6 +91,7 @@ class Model:
         
         print(f'Raw Angle: {pred_angle_raw:.3f} -> Physical Angle: {angle:.1f} | Speed: {speed}')
         
+        # Record images
         record_state(raw_image, speed, angle)
         
         return angle, speed
