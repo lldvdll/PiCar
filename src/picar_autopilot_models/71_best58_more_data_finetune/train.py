@@ -409,18 +409,18 @@ def prepare_data_pipelines():
     df_old = df
 
     # --- Load NEW data ---
+ # --- Load NEW data (filename-encoded labels) ---
     new_dfs = []
     for sub in CONFIG["NEW_DATA_DIRS"]:
         full_path = os.path.join(PROJECT_PATH, "data", sub)
-        sub_df = pd.read_csv(os.path.join(full_path, "train.csv"))
-        sub_df['filepath'] = sub_df['image_id'].astype(int).astype(str).apply(
-            lambda x: os.path.join(full_path, x + '.png').replace("\\", "/")
-        )
-        sub_df = sub_df[sub_df['filepath'].apply(os.path.exists)]
-        sub_df['image_id'] = sub + "_" + sub_df['image_id'].astype(str)
-        new_dfs.append(sub_df)
+        if os.path.isdir(full_path):
+            new_dfs.append(load_external_dataset(full_path))
+        else:
+            print(f"[WARNING] New dir not found, skipping: {full_path}")
     df_new = pd.concat(new_dfs, ignore_index=True)
     print(f"[INFO] Old: {len(df_old)} frames | New: {len(df_new)} frames")
+    print(f"[INFO] New data angle distribution:\n{df_new['angle'].value_counts().sort_index()}")
+    print(f"[INFO] New data speed distribution:\n{df_new['speed'].value_counts()}") 
 
     # Only set filepath for rows that don't already have one (i.e., original Kaggle rows)
     needs_path = df_old['filepath'].isna() if 'filepath' in df_old.columns else pd.Series(True, index=df_old.index)
