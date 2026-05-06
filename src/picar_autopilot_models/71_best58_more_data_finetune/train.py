@@ -105,7 +105,7 @@ CONFIG = {
     # --- Model Architecture ---
     "BASE_MODEL": "MobileNetV2",
     "BASE_WEIGHTS": "imagenet",
-    "PRETRAINED_WEIGHTS": "best_model_58.h5",
+    "PRETRAINED_WEIGHTS": os.path.join("src", "picar_autopilot_models", "71_best58_more_data_finetune", "best_model_58.h5"),
     "CUT_AT_BLOCK": 12,                     # The block number to cut the model at (1 to 16)
     "FREEZE_UP_TO_BLOCK": 4,                # Freezes blocks 1 through 6 during Phase 2
     
