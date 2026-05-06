@@ -37,3 +37,4 @@ Date,Experiment_Name,WandB_ID,Best_Epoch,Best_Val_Loss,Description
 2026-05-04 22:44:49,56_kaggle_16_crop120,f7wl85cm,215,0.00495,"Parameters and architecture from 16, but using cleaned and corrected dataset, adding more data from youssef. Balance then split, no early stopping, 250 epochs, crop top 120"
 2026-05-05 00:04:18,57_kaggle_16_keep12_unfreeze4,m0zcr22c,186,0.00529,"Parameters and architecture from 16, but using cleaned and corrected dataset, adding more data from youssef. Balance then split, no early stopping, 250 epochs, crop top 120, cut block 12, unfreeze 4"
 2026-05-05 23:41:56,58_57_more_lighting_aug,qz2rcehn,228,0.00506,"57, but with more agressive lighting augmentation"
+2026-05-06 15:21:11,70_best58_mode_data_full,fcwqf2kv,218,0.005,"58, but good driving examples for problem fig8 junction and oval turns"
