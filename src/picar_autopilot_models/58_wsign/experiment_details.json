@@ -1,0 +1,9 @@
+{
+    "EXPERIMENT_NAME": "58_57_more_lighting_aug",
+    "DESCRIPTION": "57, but with more agressive lighting augmentation (TPU INT8)",
+    "IMG_WIDTH_TARGET": 160,
+    "IMG_HEIGHT_TARGET": 96,
+    "CROP_TOP_PIXELS": 120,
+    "CROP_BOTTOM_PIXELS": 30,
+    "CHANNELS": 3
+}
